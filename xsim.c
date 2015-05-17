@@ -28,7 +28,7 @@ int main(int argc, char *argv[]){
   char *out_of_time = "CPU is out of time.";
   int halted, i=0;
   while (i++ < cycles || !cycles){
-    if (MUCHDEBUG) fprintf(LOG, "<CYCLE %d>\n",i-1);
+    if (MOREDEBUG) fprintf(LOG, "<CYCLE %d>\n",i-1);
     if (halted = !xcpu_execute(c, table)) break; 
   } // on halt, halted gets 0; otherwise halted remains 1
   char *exit_msg = (halted)? graceful : out_of_time;
