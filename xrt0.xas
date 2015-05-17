@@ -1,0 +1,9 @@
+.glob main
+
+  loadi Stack, r15
+  call main
+
+.literal 0
+
+.words 512
+Stack:

@@ -1,0 +1,15 @@
+  loadi 1, r0
+  loadi -1, r0
+  loadi 0, r0
+  loadi 10, r0
+  loadi -10, r0
+  loadi 256, r0
+  loadi 0x1, r0
+  loadi -0x1, r0
+  loadi 0x01, r0
+  loadi -0x01, r0
+  loadi 0x00, r0
+  loadi 0x100, r0
+
+.literal 0
+

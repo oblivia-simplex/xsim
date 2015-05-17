@@ -1,0 +1,17 @@
+.glob puts                 # external function to be used
+
+.glob main                 # export main
+main:
+  std                      # turn on debugger     
+  loadi hellostr, r0       # load pointer to the string
+  push r0                  # pust pointer as a parameter
+  call puts                # call puts to output string
+  call puts
+  call puts
+  call puts
+  pop r0
+  ret
+
+hellostr:
+.literal "Hello world!"
+

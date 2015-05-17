@@ -1,0 +1,45 @@
+  std
+  loadi Stack, r15
+  loadi 0, r0
+  loadi 1, r1
+  loadi 2, r2
+  test  r1, r1
+  test  r1, r2
+  cmp   r1, r2
+  cmp   r1, r1
+  cmp   r2, r1
+  equ   r1, r1
+  equ   r1, r2
+
+  jmp j1
+j2:
+  jmp j3
+j1:
+  jmp j2
+j3:
+ 
+  loadi jr1, r4 
+  jmpr r4
+jr2:
+  loadi jr3, r4 
+  jmpr r4
+jr1:
+  loadi jr2, r4 
+  jmpr r4
+jr3:
+
+brfalse:
+  equ r1, r2
+  br brfalse
+
+brtrue:
+  equ r1, r1
+  br brtruedone
+  jmp brtrue
+brtruedone:
+
+  loadi -1, r0
+.literal 0
+.words 512
+Stack:
+
