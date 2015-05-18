@@ -26,16 +26,16 @@ done:
   pop   r0             # restore r0
   ret                  # return
 
-##################################              
+
 memcpy:
         push   r15            # save the stack pointer
-        push   r0             # R0 will hold the byte in transit
+        push   r0             # R0 will hold the word in transit
         push   r1             # R1 will be the loop counter
         push   r2             # R2 will hold DST
         push   r3             # R3 will hold SRC
         push   r4             # R4 will hold LEN
         mov    r15, r1        # save stack pointer
-        loadi  14,  r0        # add 14 to access last param (len)         
+        loadi  0xe,  r0        # add 14 to access last param (len)         
         add    r0,  r1 
         load   r1,  r4        # ==> LEN IN R4
         loadi   2,  r0        # add another word to r1, to get next
@@ -46,17 +46,17 @@ memcpy:
         load   r1,  r2        # ==> DST IN R2
                               # let's initialize our loop counter.
         loadi   0,  r1        # don't worry, R15 is safely in the stack by now
-        jump    while_mc      # just in case someone calls memcpy for len=0.
-do_mc: 
-        mov     r3, r2        # cpy that mem!
+        jr     whilemc       # just in case someone calls memcpy for len=0.
+domc: 
+        loadb   r3,r0         # get the word pointer to by r3 (SRC)
+        storb   r0,r2         # write it to the memory pointed to by r2 (DST)
         inc     r3            # increment SRC
         inc     r2            # increment DST
         inc     r1            # increment counter
-while_mc:    
+whilemc:    
         cmp     r1, r4        # have we reached LEN yet?
-        br      do_mc         # if not, jump back to the top of the loop.
+        br      domc          # if not, jump back to the top of the loop.
                               # end of the loop
-
         pop     r4            # now pop the registers off the stack to restore
         pop     r3
         pop     r2
@@ -68,3 +68,4 @@ while_mc:
                               # already had reason to pop everything we pushed.
                               # Not a bad habit, though.
         
+###################################################################
