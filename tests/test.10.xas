@@ -1,0 +1,76 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 10: Xor-key encryption
+# See test.10.x for details
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+.glob xorcipher
+.glob puts
+.glob main
+.glob border
+main:
+        #std
+        push   r15
+        push   r14
+        mov    r15, r14
+        loadi  40, r0
+        push   r0
+        call   border
+        pop    r0
+        loadi  hellostr, r1
+        push   r1
+        call   puts
+        loadi  xorintro, r1
+        push   r1
+        call   puts
+        pop    r1
+        pop    r1
+        loadi  target, r0        
+        loadi  14, r2
+        loadi  xorkey, r3
+        push   r3    # XORKEY
+        push   r2    # LEN
+        push   r1    # SRC
+        push   r0    # DST   
+        call   xorcipher
+        pop    r0
+        pop    r1
+        pop    r2
+        pop    r3
+        loadi  target, r0
+        push   r0
+        call   puts  # let's see if it worked
+        pop    r0
+        loadi  xoroutro, r0
+        push   r0
+        call   puts
+        pop    r0
+        loadi  target, r1
+        loadi  target2, r0
+        push   r3
+        push   r2
+        push   r1
+        push   r0
+        call   xorcipher
+        call   puts
+        loadi  40, r0
+        push   r0
+        call   border
+        pop    r0
+        xor    r0, r0
+        mov    r14, r15
+        pop    r14
+        pop    r15
+        ret
+
+hellostr:
+.literal "Hello, world!"
+xorintro:                        #Hello, world!
+.literal "Xor cipher (with key = 'GOODBYE, ALL.'): "
+xorkey:
+.literal "GOODBYE, ALL."
+xoroutro:
+.literal "Decrypting..."
+target:
+.words 0x30
+target2:
+.words 0x30

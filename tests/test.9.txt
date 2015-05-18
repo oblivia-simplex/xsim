@@ -1,0 +1,22 @@
+=-=-=-=-=-=-=-=-=-=-=
+TEST 9: CAESAR CIPHER
+=-=-=-=-=-=-=-=-=-=-=
+
+The instructions tested by this test include:
+
+push     pop     call     loadi
+load     loadb   storb    mov
+neg      xor     out      add
+cmp      br      jr
+ 
+It takes the string "Hello, world!" and encrypts it using a simple rot3
+Caesar cipher, performed in an external function called "caesar" in the
+shared object file caesar.xo (source in caesar.xas). The Caesar function
+is, in its essentials, the same as memcpy, with the small addition that
+it transforms the bytes that it copies by adding an integer less than
+256 (the maximum value of a byte) to them. This is complex enough to put
+call and ret, and the stack-manipulation instructions to the test, as
+well as the arithmetic instruction add.
+
+Because this test makes a fair bit of use of stdout, I have left the
+debug bit off for this one (as well as the next). 

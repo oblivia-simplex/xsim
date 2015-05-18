@@ -1,0 +1,31 @@
+.glob memcpy
+.glob puts
+.glob main
+
+main:
+        #std
+        loadi  target, r0        
+        loadi  goodbyestr, r1
+        loadi  0x10, r2
+        push   r1
+        call puts
+        pop r1
+        push   r2    # LEN
+        push   r1    # SRC
+        push   r0    # DST
+        call   memcpy
+        pop    r0
+        pop    r1
+        pop    r2
+        loadi  target, r0
+        push   r0
+        call   puts  # let's see if it worked
+        pop    r0 
+        ret
+
+goodbyestr:
+.literal "Goodbye, world!"
+
+target:
+.words 0x100
+

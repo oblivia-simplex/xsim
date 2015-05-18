@@ -1,0 +1,74 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 9: Caesar Cypher
+# See test.9.txt for details.
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=
+.glob caesar
+.glob puts
+.glob main
+.glob border
+
+main:
+        #std
+        push   r15
+        push   r14
+        mov    r15, r14
+        loadi  40, r0
+        push   r0
+        call   border
+        loadi  hellostr, r1
+        push   r1
+        call   puts
+        loadi  caesarintro, r1
+        push   r1
+        call   puts
+        pop    r1
+        pop    r1
+        loadi  target, r0        
+        loadi  14, r2
+        loadi  3, r3 # ROT value
+        push   r3    # ROT
+        push   r2    # LEN
+        push   r1    # SRC
+        push   r0    # DST   
+        call   caesar
+        pop    r0
+        pop    r1
+        pop    r2
+        pop    r3
+        loadi  target, r0
+        push   r0
+        call   puts  # let's see if it worked
+        pop    r0
+        loadi  caesaroutro, r0
+        push   r0
+        call   puts
+        pop    r0
+        loadi  target, r1
+        loadi  target2, r0
+        neg    r3      # now let's invert the cipher
+        push   r3
+        push   r2
+        push   r1
+        push   r0
+        call   caesar
+        call   puts
+        loadi  40, r0
+        push   r0
+        call   border
+        pop    r0
+        xor    r0, r0
+        mov    r14, r15
+        pop    r14
+        pop    r15
+        ret
+
+hellostr:
+.literal "Hello, world!"
+caesarintro:
+.literal "Caesar cipher (with rot = 3): "
+caesaroutro:
+.literal "Now rotating back (rot = -3): "
+target:
+.words 0x30
+target2:
+.words 0x30
