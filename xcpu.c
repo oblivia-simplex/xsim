@@ -132,11 +132,9 @@ void* build_jump_table(void){
 void destroy_jump_table(void* table){
   free(table);
 }
-
 char prchar(char c){
   return ('A' <= c && c <= 'z')? c : '.';
 }
-
 /*****************************************************************************
  * Display *thorough* information about the current CPU context, incuding 
  * register contents and nearby code and stack memory. The channel used
@@ -191,7 +189,6 @@ void xcpu_pretty_print(xcpu *c){
   }
   fprintf(LOG,"*******************************************************************************\n");
 }
-
 /******************************************
  Display information about the xcpu context
  (Legacy debugger.)
@@ -209,7 +206,6 @@ void xcpu_print( xcpu *c ) {
   fprintf( stdout, "\n" );
 
 }
-
 /************************************************************
  Read the opcode, and use it as an index into the jump table. 
  Continue returning 1 until the programme halts (and the global
@@ -229,14 +225,12 @@ int xcpu_execute(xcpu *c, IHandler *table) {
     xcpu_pretty_print(c);
   return _halt;
 }
-
 /* Not needed for assignment 1 */
 int xcpu_exception( xcpu *c, unsigned int ex ) {
   fprintf(stderr, "FATAL: xcpu_exception.\n");
   xcpu_print(c);
   exit(EXIT_FAILURE);
 }
-
 /******************************************************************
    Constructs a word out of two contiguous bytes in a byte array,
    and returns it. Can be used to fetch instructions, labels, and
@@ -520,16 +514,12 @@ void storb(xcpu *c, unsigned short int instruction){
   c->memory[c->regs[XIS_REG2(instruction)] % MEMSIZE] =
     c->regs[XIS_REG1(instruction)] & 0x00FF; // low byte mask
 }
-
 /*************************
  * extended instructions *
  *************************/
-
 void jmp(xcpu *c, unsigned short int instruction){
   if (MOREDEBUG) fprintf(LOG, "[[jmp]]\n");
-  c->pc = c->memory[c->pc % MEMSIZE];
-  // the pc has already been incremented, and so now points to the next word
-  // this is an extended instruction
+  c->pc = fetch_word(c->memory, c->pc);
 }
 void call(xcpu *c, unsigned short int instruction){
   unsigned short int label = fetch_word(c->memory, c->pc);
@@ -539,20 +529,17 @@ void call(xcpu *c, unsigned short int instruction){
     (unsigned char) (c->pc >> 8);
   c->memory[(c->regs[X_STACK_REG]+1) % MEMSIZE] =
     (unsigned char) (c->pc & 0xFF);
-  //if (label % 2 != 0) fprintf(stderr, "\nWARNING: ODD LABEL %4.4x",label);
-  c->pc = label; //c->memory[label];
+  c->pc = label; 
   if (MOREDEBUG) fprintf(LOG, "[[call to <%4.4x>: %2.2x%2.2x]]\n",
                          label,
                          (c->memory[label % MEMSIZE]),
                          (c->memory[(label+1) % MEMSIZE]));
 }
-
 void loadi(xcpu *c, unsigned short int instruction){
   unsigned short int value = fetch_word(c->memory, c->pc);
   c->pc += WORD_SIZE;
   c->regs[XIS_REG1(instruction) ] = value;
     if (MOREDEBUG) fprintf(LOG, "[[loadi: loading %4.4x into register R%d]]\n",
                            value, XIS_REG1(instruction));
- 
 }
-
+/** That's all, folks! **/
