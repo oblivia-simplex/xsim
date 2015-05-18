@@ -7,7 +7,7 @@ gcc -o xsim xsim.c
 ./xsim      $LOOPS $1 2> /dev/null > $1.0.out
 ./xsim_gold $LOOPS $1 2> /dev/null > $1.1.out
 
-diff $1.0.out $1.1.out > $1.dif
+diff -u $1.0.out $1.1.out > $1.dif
 
 d=$(wc -l $1.dif | cut -d" " -f1)
 
@@ -15,6 +15,6 @@ if (( $d == 0 )); then
     echo "Good job!"
 else
     #hd=(( $d / 2 ))
-    echo "Found $d differences in the output."
-    echo "cat $1.dif to see."
+    echo "Found differences in the output."
+    echo "Open $1.dif to see."
 fi

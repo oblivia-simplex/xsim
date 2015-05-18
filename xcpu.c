@@ -67,7 +67,7 @@ void jr(xcpu *c, unsigned short int instruction);
 void add(xcpu *c, unsigned short int instruction);
 void sub(xcpu *c, unsigned short int instruction);
 void mul(xcpu *c, unsigned short int instruction);
-void divi(xcpu *c, unsigned short int instruction);
+void divide(xcpu *c, unsigned short int instruction);
 void and(xcpu *c, unsigned short int instruction);
 void or(xcpu *c, unsigned short int instruction);
 void xor(xcpu *c, unsigned short int instruction);
@@ -116,7 +116,7 @@ void* build_jump_table(void){
   table[I_POP]  = pop;     table[I_JMPR]  = jmpr;    table[I_CALLR] = callr;
   table[I_OUT]  = out;     table[I_INC]   = inc;     table[I_DEC]   = dec;
   table[I_BR]   = br;      table[I_JR]    = jr;      table[I_ADD]   = add;
-  table[I_SUB]  = sub;     table[I_MUL]   = mul;     table[I_DIV]   = divi;
+  table[I_SUB]  = sub;     table[I_MUL]   = mul;     table[I_DIV]   = divide;
   table[I_AND]  = and;     table[I_OR]    = or;      table[I_XOR]   = xor;
   table[I_SHR]  = shr;     table[I_SHL]   = shl;     table[I_TEST]  = test;
   table[I_CMP]  = cmp;     table[I_EQU]   = equ;     table[I_MOV]   = mov;
@@ -383,7 +383,7 @@ void mul(xcpu *c, unsigned short int instruction){
   c->regs[XIS_REG2(instruction)] =
     c->regs[XIS_REG2(instruction)] * c->regs[XIS_REG1(instruction)];
 }
-void divi(xcpu *c, unsigned short int instruction){
+void divide(xcpu *c, unsigned short int instruction){
   if (MOREDEBUG) fprintf(LOG, "[div: R%d <- 0x%4.4x = 0x%4.4x / 0x%4.4x]\n",
                          XIS_REG2(instruction),
                          (c->regs[XIS_REG2(instruction)] /
@@ -506,7 +506,7 @@ void loadb(xcpu *c, unsigned short int instruction){
     c->memory[c->regs[XIS_REG1(instruction)] % MEMSIZE];
 }
 void storb(xcpu *c, unsigned short int instruction){
-  if (MOREDEBUG) fprintf(LOG, "[storb: storing byte %2.2 (%c) in memory[%4.4x] from R%d]\n",
+  if (MOREDEBUG) fprintf(LOG, "[storb: storing byte %2.2x (%c) in memory[%4.4x] from R%d]\n",
                          c->regs[XIS_REG1(instruction)] & 0x00FF,
                          prchar(c->regs[XIS_REG1(instruction)] & 0x00FF),
                          c->regs[XIS_REG2(instruction)]%MEMSIZE,
