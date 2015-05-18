@@ -1,4 +1,6 @@
 .glob puts
+.glob memcpy
+        
 puts:
   push  r0             # save registers to be used
   push  r1
@@ -23,3 +25,46 @@ done:
   pop   r1             # restore r1
   pop   r0             # restore r0
   ret                  # return
+
+##################################              
+memcpy:
+        push   r15            # save the stack pointer
+        push   r0             # R0 will hold the byte in transit
+        push   r1             # R1 will be the loop counter
+        push   r2             # R2 will hold DST
+        push   r3             # R3 will hold SRC
+        push   r4             # R4 will hold LEN
+        mov    r15, r1        # save stack pointer
+        loadi  14,  r0        # add 14 to access last param (len)         
+        add    r0,  r1 
+        load   r1,  r4        # ==> LEN IN R4
+        loadi   2,  r0        # add another word to r1, to get next
+        add    r0,  r1        # parameter (source)
+        load   r1,  r3        # ==> SRC IN R3
+        loadi   2,  r0        # same as before
+        add    r0,  r1
+        load   r1,  r2        # ==> DST IN R2
+                              # let's initialize our loop counter.
+        loadi   0,  r1        # don't worry, R15 is safely in the stack by now
+        jump    while_mc      # just in case someone calls memcpy for len=0.
+do_mc: 
+        mov     r3, r2        # cpy that mem!
+        inc     r3            # increment SRC
+        inc     r2            # increment DST
+        inc     r1            # increment counter
+while_mc:    
+        cmp     r1, r4        # have we reached LEN yet?
+        br      do_mc         # if not, jump back to the top of the loop.
+                              # end of the loop
+
+        pop     r4            # now pop the registers off the stack to restore
+        pop     r3
+        pop     r2
+        pop     r1
+        pop     r0
+        pop     r15           # restore the stack pointer!
+        ret                   # it wasn't really necessary to save and restore
+                              # the stack pointer in this case, since we
+                              # already had reason to pop everything we pushed.
+                              # Not a bad habit, though.
+        
