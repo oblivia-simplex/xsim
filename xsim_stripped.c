@@ -47,7 +47,6 @@ unsigned short int fetch_word(unsigned char *mem, unsigned short int ptr);
 void load_programme(xcpu *c, FILE *fd);
 void * build_jump_table(void);
 void destroy_jump_table(void * addr);
-void fatal(char* errmsg);
 
 // instruction set
 void bad(xcpu *c, unsigned short int instruction);
@@ -68,7 +67,7 @@ void jr(xcpu *c, unsigned short int instruction);
 void add(xcpu *c, unsigned short int instruction);
 void sub(xcpu *c, unsigned short int instruction);
 void mul(xcpu *c, unsigned short int instruction);
-void divide(xcpu *c, unsigned short int instruction);
+void divi(xcpu *c, unsigned short int instruction);
 void and(xcpu *c, unsigned short int instruction);
 void or(xcpu *c, unsigned short int instruction);
 void xor(xcpu *c, unsigned short int instruction);
@@ -85,24 +84,14 @@ void storb(xcpu *c, unsigned short int instruction);
 void jmp(xcpu *c, unsigned short int instruction);
 void call(xcpu *c, unsigned short int instruction);
 void loadi(xcpu *c, unsigned short int instruction);
-/**************************************************************************
-   Gracefully terminate the programme on unrecoverable error.
-***************************************************************************/
-void fatal(char *errmsg){
-  fprintf(stderr, "%s\n", errmsg);
-  exit(EXIT_FAILURE);  
-  // some memory-freeing should happen here too...
-}
-/**************************************************************************
+
+/****************************************************************************
    Load a programme into memory, given a file descriptor. 
- **************************************************************************/
+ ****************************************************************************/
 void load_programme(xcpu *c, FILE *fd){
   unsigned int addr = 0;
-  while ((c->memory[addr++] = fgetc(fd)) != 0xFF && addr <= MEMSIZE)
+  while ((c->memory[addr++ % MEMSIZE] = fgetc(fd)) != 0xFF)  
     ;
-  if (addr > MEMSIZE){
-    fatal("Programme too large to fit in memory. Aborting.");
-  }
 }
 /***************************************************************************
    CREATE A JUMP TABLE TO THE INSTRUCTION FUNCTIONS
@@ -127,7 +116,7 @@ void* build_jump_table(void){
   table[I_POP]  = pop;     table[I_JMPR]  = jmpr;    table[I_CALLR] = callr;
   table[I_OUT]  = out;     table[I_INC]   = inc;     table[I_DEC]   = dec;
   table[I_BR]   = br;      table[I_JR]    = jr;      table[I_ADD]   = add;
-  table[I_SUB]  = sub;     table[I_MUL]   = mul;     table[I_DIV]   = divide;
+  table[I_SUB]  = sub;     table[I_MUL]   = mul;     table[I_DIV]   = divi;
   table[I_AND]  = and;     table[I_OR]    = or;      table[I_XOR]   = xor;
   table[I_SHR]  = shr;     table[I_SHL]   = shl;     table[I_TEST]  = test;
   table[I_CMP]  = cmp;     table[I_EQU]   = equ;     table[I_MOV]   = mov;
@@ -143,9 +132,11 @@ void* build_jump_table(void){
 void destroy_jump_table(void* table){
   free(table);
 }
+
 char prchar(char c){
   return ('A' <= c && c <= 'z')? c : '.';
 }
+
 /*****************************************************************************
  * Display *thorough* information about the current CPU context, incuding 
  * register contents and nearby code and stack memory. The channel used
@@ -200,6 +191,7 @@ void xcpu_pretty_print(xcpu *c){
   }
   fprintf(LOG,"*******************************************************************************\n");
 }
+
 /******************************************
  Display information about the xcpu context
  (Legacy debugger.)
@@ -215,7 +207,6 @@ void xcpu_print( xcpu *c ) {
     fprintf( stdout, " %4.4x", c->regs[i] );
   }
   fprintf( stdout, "\n" );
-
 }
 /************************************************************
  Read the opcode, and use it as an index into the jump table. 
@@ -224,27 +215,26 @@ void xcpu_print( xcpu *c ) {
  actual 'halting' is handled by xsim.c.
 *************************************************************/
 int xcpu_execute(xcpu *c, IHandler *table) {
-
   unsigned char opcode;
   unsigned short int instruction = fetch_word(c->memory, c->pc); 
   opcode = (unsigned char)( (instruction >> 8) & 0x00FF); 
-  c->pc += WORD_SIZE;  //////
-  (table[opcode])(c, instruction);
+  c->pc += WORD_SIZE;
+  // extended instructions will increment PC in their function
+  (table[opcode])(c, instruction); //  execute the instruction
   if (_halt == 1 && (c->state & 0xFFFE))
     xcpu_print(c);
   else if (MOREDEBUG)
     xcpu_pretty_print(c);
   return _halt;
 }
+
 /* Not needed for assignment 1 */
 int xcpu_exception( xcpu *c, unsigned int ex ) {
-  xcpu_pretty_print(c);
-  char* msg = "\nXCPU Exception #";
-  int j = strlen(msg);
-  msg[j] = '0'+ex; // a hackish way of turning a number < 10 into a digit
-  msg[j+1] = '\0'; // this obviously won't work if there are more than 10
-  fatal(msg);      // error codes, but it's just a placeholder for now.
+  fprintf(stderr, "FATAL: xcpu_exception.\n");
+  xcpu_print(c);
+  exit(EXIT_FAILURE);
 }
+
 /******************************************************************
    Constructs a word out of two contiguous bytes in a byte array,
    and returns it. Can be used to fetch instructions, labels, and
@@ -253,10 +243,9 @@ int xcpu_exception( xcpu *c, unsigned int ex ) {
 unsigned short int fetch_word(unsigned char *mem, unsigned short int ptr){
   unsigned short int word =
     (((unsigned short int) (mem[ptr % MEMSIZE] << 8)) & 0xFF00)
-    |(((unsigned short int) (mem[(ptr+1) % MEMSIZE]))   & 0x00FF);
+    |(((unsigned short int) (mem[(ptr+1) % MEMSIZE])) & 0x00FF);
   return word;
 }
-
 /*********************************
  * THE INSTRUCTION SET FUNCTIONS *
  *********************************/
@@ -397,7 +386,7 @@ void mul(xcpu *c, unsigned short int instruction){
   c->regs[XIS_REG2(instruction)] =
     c->regs[XIS_REG2(instruction)] * c->regs[XIS_REG1(instruction)];
 }
-void divide(xcpu *c, unsigned short int instruction){
+void divi(xcpu *c, unsigned short int instruction){
   if (MOREDEBUG) fprintf(LOG, "[div: R%d <- 0x%4.4x = 0x%4.4x / 0x%4.4x]\n",
                          XIS_REG2(instruction),
                          (c->regs[XIS_REG2(instruction)] /
@@ -520,7 +509,7 @@ void loadb(xcpu *c, unsigned short int instruction){
     c->memory[c->regs[XIS_REG1(instruction)] % MEMSIZE];
 }
 void storb(xcpu *c, unsigned short int instruction){
-  if (MOREDEBUG) fprintf(LOG, "[storb: storing byte %2.2x (%c) in memory[%4.4x] from R%d]\n",
+  if (MOREDEBUG) fprintf(LOG, "[storb: storing byte %2.2 (%c) in memory[%4.4x] from R%d]\n",
                          c->regs[XIS_REG1(instruction)] & 0x00FF,
                          prchar(c->regs[XIS_REG1(instruction)] & 0x00FF),
                          c->regs[XIS_REG2(instruction)]%MEMSIZE,
@@ -528,12 +517,16 @@ void storb(xcpu *c, unsigned short int instruction){
   c->memory[c->regs[XIS_REG2(instruction)] % MEMSIZE] =
     c->regs[XIS_REG1(instruction)] & 0x00FF; // low byte mask
 }
+
 /*************************
  * extended instructions *
  *************************/
+
 void jmp(xcpu *c, unsigned short int instruction){
   if (MOREDEBUG) fprintf(LOG, "[[jmp]]\n");
-  c->pc = fetch_word(c->memory, c->pc);
+  c->pc = c->memory[c->pc % MEMSIZE];
+  // the pc has already been incremented, and so now points to the next word
+  // this is an extended instruction
 }
 void call(xcpu *c, unsigned short int instruction){
   unsigned short int label = fetch_word(c->memory, c->pc);
@@ -543,17 +536,20 @@ void call(xcpu *c, unsigned short int instruction){
     (unsigned char) (c->pc >> 8);
   c->memory[(c->regs[X_STACK_REG]+1) % MEMSIZE] =
     (unsigned char) (c->pc & 0xFF);
-  c->pc = label; 
+  //if (label % 2 != 0) fprintf(stderr, "\nWARNING: ODD LABEL %4.4x",label);
+  c->pc = label; //c->memory[label];
   if (MOREDEBUG) fprintf(LOG, "[[call to <%4.4x>: %2.2x%2.2x]]\n",
                          label,
                          (c->memory[label % MEMSIZE]),
                          (c->memory[(label+1) % MEMSIZE]));
 }
+
 void loadi(xcpu *c, unsigned short int instruction){
   unsigned short int value = fetch_word(c->memory, c->pc);
   c->pc += WORD_SIZE;
   c->regs[XIS_REG1(instruction) ] = value;
     if (MOREDEBUG) fprintf(LOG, "[[loadi: loading %4.4x into register R%d]]\n",
                            value, XIS_REG1(instruction));
+ 
 }
-/** That's all, folks! **/
+

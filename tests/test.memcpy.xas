@@ -1,15 +1,22 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 11: Test for memcpy()
+# If this works, it will print
+# 'Goodbye, world!' twice.
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
 .glob memcpy
 .glob puts
+
 .glob main
 
 main:
-        #std
+        std
         loadi  target, r0        
         loadi  goodbyestr, r1
         loadi  0x10, r2
         push   r1
-        call puts
-        pop r1
+        call   puts
+        pop    r1
         push   r2    # LEN
         push   r1    # SRC
         push   r0    # DST
@@ -19,13 +26,27 @@ main:
         pop    r2
         loadi  target, r0
         push   r0
-        call   puts  # let's see if it worked
-        pop    r0 
-        ret
+        call   puts  #  see if it worked
+        pop    r0
+        loadi  target, r0
+        loadi  nullstr, r1
+        loadi  0, r2
+        push r2
+        push r1
+        push r0
+        call memcpy
+        pop r0
+        pop r1
+        pop r2
+        push r0
+        call puts 
+        ret      
 
 goodbyestr:
 .literal "Goodbye, world!"
-
+nullstr:
+.literal 0
 target:
 .words 0x100
-
+target2:
+.words 1
