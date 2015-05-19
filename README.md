@@ -21,3 +21,9 @@ You'll never fool anyone.
 0xdeba5e12
 
 
+to do:
+******
+- finish writing tests in X assembly
+- be sure to cover the entire instruction set
+- boundary cases, etc.
+- overflow conditions
