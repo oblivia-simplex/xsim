@@ -41,7 +41,6 @@ done:
 # to an array beginning at address DST.
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 memcpy:
-        push   r15            # save old stack pointer
         push   r14            # save old base pointer
         mov    r15, r14       # save stack pointer in base pointer
         push   r0             # R0 will hold the word in transit
@@ -49,7 +48,7 @@ memcpy:
         push   r2             # R2 will hold LEN
         push   r3             # R3 will hold SRC
         push   r4             # R4 will hold DST
-        loadi  6,  r0         # add base-pointer+4 to access last param
+        loadi  4,  r0         # add base-pointer+4 to access last param
         add    r14, r0 
         load   r0,  r4        # ==> DST in R4
         loadi   2,  r1        # add another word to r1, to get next
@@ -80,12 +79,9 @@ whilemc:
         pop     r2
         pop     r1
         pop     r0
+        mov     r14, r15      # clean the stack
         pop     r14           # restore base pointer
-        pop     r15           # restore the stack pointer
-        ret                   # it wasn't really necessary to save and restore
-                              # the stack pointer in this case, since we
-                              # already had reason to pop everything we pushed.
-                              # Not a bad habit, though.
+        ret             
         
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # mapbyte
@@ -100,7 +96,6 @@ whilemc:
 #      DST and FPTR.
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 mapbyte:
-        push   r15            # save old stack pointer
         push   r14            # save old base pointer
         mov    r15, r14       # save stack pointer in base pointer
         push   r0             # R0 will hold the word in transit
@@ -110,11 +105,15 @@ mapbyte:
         push   r4             # R4 will hold DST
         push   r5             # R5 will hold FPARAM
         push   r6             # R6 will hold FPTR
-        loadi  6,  r0         # add base-pointer+4 to access last param
-        add    r14, r0 
+        loadi  4,  r0         # add base-pointer+4 to access last param
+        add    r14, r0
+        load   r0,  r6        # ==> FPTR in R6
+        loadi   2,  r1        # 
+        add    r1,  r0        # 
+        load   r0,  r5        # ==> FPARAM in r5
+        add    r1,  r0
         load   r0,  r4        # ==> DST in R4
-        loadi   2,  r1        # add another word to r1, to get next
-        add    r1,  r0        # parameter (source)
+        add    r1,  r0
         load   r0,  r3        # ==> SRC IN R3
         add    r1,  r0
         load   r0,  r2        # ==> LEN IN R2
@@ -141,8 +140,8 @@ whilemb:
         pop     r2
         pop     r1
         pop     r0
+        mov     r14, r15      # clean the stack
         pop     r14           # restore base pointer
-        pop     r15           # restore the stack pointer
         ret                   # it wasn't really necessary to save and restore
                               # the stack pointer in this case, since we
                               # already had reason to pop everything we pushed.
@@ -159,14 +158,13 @@ whilemb:
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 border:
-        push  r15
         push  r14
         mov   r15, r14
         push  r0
         push  r1
         push  r2
         push  r3
-        loadi 6, r0
+        loadi 4, r0
         add   r14, r0
         load  r0, r2
         loadi 2, r0
@@ -190,6 +188,5 @@ bloop:
         pop r0
         mov r14, r15    # clean up the stack
         pop r14
-        pop r15
         ret
 

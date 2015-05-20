@@ -1,71 +1,207 @@
-# =-=-=-=-=-=-=-=-=-=-=-=-=-=
-# Test 10: Xor-key encryption
-# See test.10.x for details
-# =-=-=-=-=-=-=-=-=-=-=-=-=-=
-
-.glob xorcipher
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 9: Caesar Cypher, using mapbyte function
+# See test.9.txt for details.
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+.glob mapbyte
 .glob puts
 .glob main
 .glob border
+.glob memcpy
 main:
         #std
         push   r15
         push   r14
         mov    r15, r14
-        loadi  40, r0
-        push   r0
+        loadi  60, r10
+        push   r10
         call   border
-        pop    r0
+        pop    r10
         loadi  hellostr, r1
         push   r1
         call   puts
-        loadi  xorintro, r1
+        loadi  caesarintro, r1
         push   r1
         call   puts
         pop    r1
         pop    r1
         loadi  target, r0        
         loadi  14, r2
-        loadi  xorkey, r3
-        push   r3    # XORKEY
-        push   r2    # LEN
-        push   r1    # SRC
-        push   r0    # DST   
-        call   xorcipher
+        loadi  3, r3    # ROT value ==> FPARAM
+        loadi  rot, r4  # FPTR value 
+        push   r2       # LEN
+        push   r1       # SRC
+        push   r0       # DST   
+        push   r3       # FPARAM
+        push   r4       # FPTR
+        call   mapbyte
+        pop    r4
+        pop    r3
         pop    r0
         pop    r1
         pop    r2
-        pop    r3
         loadi  target, r0
         push   r0
-        call   puts  # let's see if it worked
+        call   puts      # let's see if it worked
         pop    r0
-        loadi  xoroutro, r0
+        loadi  caesaroutro, r0
         push   r0
         call   puts
         pop    r0
         loadi  target, r1
         loadi  target2, r0
-        push   r3
-        push   r2
-        push   r1
-        push   r0
-        call   xorcipher
+        neg    r3       # now let's invert the cipher
+        push   r2       # LEN
+        push   r1       # SRC
+        push   r0       # DST
+        push   r3       # FPARAM
+        push   r4       # FPTR, I hope
+        call   mapbyte
+        pop    r4
+        pop    r3       # leaving r0 (DST) at the top of the stack...
         call   puts
-        loadi  40, r0
-        push   r0
+        push   r10
         call   border
+        pop    r10
+        loadi  xorintro, r0
+        push   r0
+        call   puts
+        pop    r0
+# ------------------------------------
+# the xorcrypt function burns the key,
+# so make a copy first.
+# ------------------------------------
+        loadi  14, r0
+        loadi  hellostr, r1
+        loadi  target, r2
+        loadi  xorkey, r3
+        loadi  scratchpad, r9
+        loadi  xorcrypt, r4
+        push   r0       # LEN = 14
+        push   r3       # SRC = xorkey
+        push   r9       # DST = scratchpad
+        call   memcpy
+        pop    r9
+        pop    r3               # now load the parameters for mapbyte
+        push   r0               # LEN
+        push   r1               # SRC
+        push   r2               # DST
+        push   r3               # FPARAM/KEY
+        push   r4               # FPTR/xorcrypt
+        call   mapbyte
+        loadi  0xbeef, r9       ######## for grep debugging
+        xor    r9, r9           ######## to check for safe return
+        pop    r4               # get FPTR
+        pop    r3               # get FPARAM
+        call   puts
+        loadi  xoroutro, r9
+        push   r9
+        call   puts
+        pop    r9
+        pop    r2               # get DST
+        pop    r1               # get SRC
+        mov    r2, r1           # make old DST -> new SRC
+        loadi  target2, r2      # make target2 new DST
+        push   r1
+        push   r2
+        loadi  scratchpad, r3   # we need a fresh copy of the key
+        push   r3               # 
+        push   r4               # put FPTR back unchanged
+        call   mapbyte
+        pop    r4
+        pop    r3
+        call   puts
+        push   r10
+        call   border
+        pop    r10
+        pop    r2
+        pop    r1
         pop    r0
         xor    r0, r0
         mov    r14, r15
         pop    r14
         pop    r15
         ret
+# ----------------------------------------------------------
+# The function we'll be using for the first call of mapbyte:
+# ----------------------------------------------------------
+rot:
+        push   r14
+        mov    r15, r14         # boilerplate: save sp and bp, etc.
+        push   r1
+        push   r2
+        loadi  4, r2
+        add    r14, r2
+        load   r2, r1           # rotation parameter in R1
+        loadi  2,  r0
+        add    r0, r2           
+        load   r2, r0           # byte to rotate in R0
+        test   r0, r0           # don't want to rotate the null byte!
+        br     notnull
+        jr     isnull
+notnull:
+        add    r1, r0           # rotate that byte: return value now in r0
+isnull:
+        pop    r2
+        pop    r1
+        mov    r14, r15         # clean up the stack
+        pop    r14              # restore base pointer
+        ret
+
+# ----------------------------------------------------------
+# The function we'll be using for the second call of mapbyte:
+# ----------------------------------------------------------
+xorcrypt:
+        push   r14              # save base poitner
+        mov    r15, r14         # boilerplate: save sp and bp, etc.
+        push   r1
+        push   r2
+        push   r5
+        push   r6
+        loadi  4, r2
+        add    r14, r2
+        load   r2, r1           # ptr to encryption key
+        loadi  2,  r0
+        add    r0, r2           
+        load   r2, r0           # address of xor key
+        test   r0, r0           # don't xor the null byte!
+        br     notnullx
+        jr     isnullx
+notnullx:
+        loadb   r5, r6 
+        xor     r6, r0          # xor by key byte
+# ----------------------------------------------------------------------
+# now shift the key along one byte to the left, so it will be where we
+# need it to be, next time around.
+# ----------------------------------------------------------------------
+shiftkeyloop:
+        inc     r5
+        loadb   r5, r6
+        test    r6, r6
+        br      stillgood
+        jr      isnullx
+stillgood:
+        dec     r5
+        storb   r6, r5
+        inc     r5
+        br      shiftkeyloop
+isnullx:
+        pop    r6
+        pop    r5
+        pop    r2
+        pop    r1
+        mov    r14, r15
+        pop    r14
+        ret
+
 
 hellostr:
 .literal "Hello, world!"
-xorintro:                        #Hello, world!
-.literal "Xor cipher (with key = 'GOODBYE, ALL.'): "
+caesarintro:
+.literal "Caesar cipher (with rot = 3): "
+caesaroutro:
+.literal "Now rotating back (rot = -3): "
+xorintro:                                            #Hello, world!
+.literal "Now let's try a xor encryption (with key = 'GOODBYE, ALL.'): "
 xorkey:
 .literal "GOODBYE, ALL."
 xoroutro:
@@ -73,4 +209,6 @@ xoroutro:
 target:
 .words 0x30
 target2:
+.words 0x30
+scratchpad:
 .words 0x30
