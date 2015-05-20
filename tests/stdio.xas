@@ -1,6 +1,14 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# A library of input/output-related functions.
+# memcpy, mapbyte, and border written by Olivia Lucca Fraser
+# puts written by Alex Brodsky(?).
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
 .glob puts
 .glob memcpy
-        
+.glob mapbyte
+.glob border
+
 puts:
   push  r0             # save registers to be used
   push  r1
@@ -26,7 +34,12 @@ done:
   pop   r0             # restore r0
   ret                  # return
 
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# memcpy
 # 3 params: DST, SRC, LEN
+# Copies a sequence of LEN bytes from an array beginning at address SRC
+# to an array beginning at address DST.
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 memcpy:
         push   r15            # save old stack pointer
         push   r14            # save old base pointer
@@ -74,3 +87,109 @@ whilemc:
                               # already had reason to pop everything we pushed.
                               # Not a bad habit, though.
         
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# mapbyte
+# 5 params:  FPTR, FPARAM, DST, SRC, LEN
+# use: mapbyte works like memcpy, but applies a transform to the bytes
+#      being copied as they pass from SRC to DST. This transform is
+#      implemented by a function at the address contained in FPTR,
+#      which is passed to mapbyte as its first parameter. A parameter
+#      can also be supplied to the transform function with the FPARAM
+#      parameter of mapbyte. If the transform function takes no param-
+#      eters, FPARAM can be left null, but must be pushed in between
+#      DST and FPTR.
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+mapbyte:
+        push   r15            # save old stack pointer
+        push   r14            # save old base pointer
+        mov    r15, r14       # save stack pointer in base pointer
+        push   r0             # R0 will hold the word in transit
+        push   r1             # R1 will be the loop counter
+        push   r2             # R2 will hold LEN
+        push   r3             # R3 will hold SRC
+        push   r4             # R4 will hold DST
+        push   r5             # R5 will hold FPARAM
+        push   r6             # R6 will hold FPTR
+        loadi  6,  r0         # add base-pointer+4 to access last param
+        add    r14, r0 
+        load   r0,  r4        # ==> DST in R4
+        loadi   2,  r1        # add another word to r1, to get next
+        add    r1,  r0        # parameter (source)
+        load   r0,  r3        # ==> SRC IN R3
+        add    r1,  r0
+        load   r0,  r2        # ==> LEN IN R2
+        xor    r1,  r1        # let's initialize our loop counter.
+        jr     whilemb        # just in case someone calls memcpy for len=0.
+domb: 
+        loadb   r3,r0         # get the word pointed to by r3 (SRC)
+        push    r0            # push byte to be transformed
+        push    r5            # push transform function parameter
+        callr   r6            # call transform function
+        pop     r5            # r0 now contains return value of transform
+        storb   r0,r4         # write it to the memory pointed to by r2 (DST)
+        inc     r3            # increment SRC
+        inc     r4            # increment DST
+        inc     r1            # increment counter
+whilemb:    
+        cmp     r1, r2        # have we reached LEN yet?
+        br      domb          # if not, jump back to the top of the loop.
+                              # end of the loop
+        pop     r6
+        pop     r5
+        pop     r4            # now pop the registers off the stack to restore
+        pop     r3
+        pop     r2
+        pop     r1
+        pop     r0
+        pop     r14           # restore base pointer
+        pop     r15           # restore the stack pointer
+        ret                   # it wasn't really necessary to save and restore
+                              # the stack pointer in this case, since we
+                              # already had reason to pop everything we pushed.
+                              # Not a bad habit, though.
+
+
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# border
+# no params
+# Draws a pretty border, whose length is supplied as a parameter.
+# used in displaying (and nicely framing) some of the tests' outputs.
+# (The border looks a lot like this one.)
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+border:
+        push  r15
+        push  r14
+        mov   r15, r14
+        push  r0
+        push  r1
+        push  r2
+        push  r3
+        loadi 6, r0
+        add   r14, r0
+        load  r0, r2
+        loadi 2, r0
+        div   r0,r2
+        xor   r1, r1
+bloop:
+        loadi  0x3d, r3
+        out r3
+        loadi  0x2d, r3
+        out r3
+        inc r1
+        cmp r1, r2
+        br bloop
+        loadi 0x3d, r3
+        out r3
+        loadi 0xa, r3
+        out r3
+        pop r3
+        pop r2
+        pop r1
+        pop r0
+        mov r14, r15    # clean up the stack
+        pop r14
+        pop r15
+        ret
+

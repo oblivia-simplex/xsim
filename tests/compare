@@ -13,6 +13,10 @@ d=$(wc -l $1.dif | cut -d" " -f1)
 
 if (( $d == 0 )); then
     echo "Good job!"
+    echo "Making official .out file..."
+    outfile=$(echo $1 | sed s/.x//).out
+    mv $1.1.out $outfile
+    rm $1.0.out
 else
     #hd=(( $d / 2 ))
     echo "Found differences in the output."

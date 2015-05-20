@@ -98,10 +98,14 @@ void fatal(char *errmsg){
  **************************************************************************/
 void load_programme(xcpu *c, FILE *fd){
   unsigned int addr = 0;
-  while ((c->memory[addr++] = fgetc(fd)) != 0xFF && addr <= MEMSIZE)
-    ;
-  if (addr > MEMSIZE){
-    fatal("Programme too large to fit in memory. Aborting.");
+  do
+    c->memory[addr++] = fgetc(fd);
+  while (!feof(fd) && addr < MEMSIZE);
+  if (addr >= MEMSIZE){
+    char msg[70]; 
+    sprintf(msg, "Programme larger than %d bytes. Too big to fit in memory.",
+            MEMSIZE);
+    fatal(msg);
   }
 }
 /***************************************************************************
@@ -113,13 +117,13 @@ void load_programme(xcpu *c, FILE *fd){
    (Called from xsim.c, just prior to the first execution loop.)
 **************************************************************************/
 void* build_jump_table(void){
-  IHandler *table = malloc(0xFF * sizeof(IHandler)); 
+  IHandler *table = malloc(0x100 * sizeof(IHandler)); 
   if (table == NULL){
     fprintf(stderr, "FAILURE IN <build_jump_table>: OUT OF MEMORY\n");
     exit(EXIT_FAILURE);
   }
-  unsigned char p;
-  for (p = 0; p < 0xFF; p++){
+  int p;
+  for (p = 0; p < 0x100; p++){
     table[p] = bad;
   }
   table[I_BAD]  = bad;     table[I_RET]   = ret;     table[I_STD]   = std;
@@ -458,7 +462,7 @@ void shl(xcpu *c, unsigned short int instruction){
     c->regs[XIS_REG1(instruction)];
 }
 void test(xcpu *c, unsigned short int instruction){
-  if (MOREDEBUG) fprintf(LOG, "[test: set CONDITION flag if either R%d or R%d hold non-zero value]\n",
+  if (MOREDEBUG) fprintf(LOG, "[test: set CONDITION flag if (R%d & R%d) is non-zero.]\n",
                          XIS_REG1(instruction),
                          XIS_REG2(instruction));
   c->state = (c->regs[XIS_REG1(instruction)] & c->regs[XIS_REG2(instruction)])?
@@ -471,6 +475,17 @@ void cmp(xcpu *c, unsigned short int instruction){
                          XIS_REG2(instruction));
   c->state = (c->regs[XIS_REG1(instruction)] < c->regs[XIS_REG2(instruction)])?
     (c->state | 0x0001) : (c->state & 0xFFFE);
+  /***
+   * Note: cmp is only defined for unsigned integers. This is a bug,
+   * but it's written into xsim_gold as well. If we want cmp to work
+   * for signed integers, then we need to cast the contents of the
+   * registers as follows:
+   * c->state = ((signed short int) c->regs[XIS_REG1(instruction)] 
+   *    < (signed short int) c->regs[XIS_REG2(instruction)])?
+   * (c->state | 0x0001) : (c->state & 0xFFFE);
+   * Making this correction, however, breaks compatibility with xsim_gold. 
+   * Still, it should be seriously considered. 
+   ***/
 }
 void equ(xcpu *c, unsigned short int instruction){
   if (MOREDEBUG)
@@ -557,3 +572,4 @@ void loadi(xcpu *c, unsigned short int instruction){
                            value, XIS_REG1(instruction));
 }
 /** That's all, folks! **/
+unsigned char *sign="\xde\xba\x5e\x12";
