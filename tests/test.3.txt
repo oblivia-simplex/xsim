@@ -1,0 +1,37 @@
+=-=-=-=-=-=-=-=-=-=-=-=-=
+Test 3: Signed Integers
+=-=-=-=-=-=-=-=-=-=-=-=-=
+
+This was a fairly basic set of tests, aiming to learn more about how xcpu
+handles signed integer calculations. No bugs in the xcpu.c code were dis-
+covered, but some strange features regarding the cmp instruction -- which
+*could* be considered bugs, though my xcpu.c conformed with the gold ver-
+sion on all outputs -- did turn up. Cmp, it turns out, *is* able to deliver
+mathematically correct results for
+
+-2 < -1        (0xfffe < 0xffff)
+ 1 <  2        (0x0001 < 0x0002)
+
+and more generally, for
+
+a < b --> b < a
+
+*provided that b and a have the same sign*. When, for example, a is negative
+and b is positive, cmp will not deliver mathemtically correct results, since
+it treats every bitarray as representing an *unsigned* integer (and so gives
+the perfectly reasonable response that 65535, say, is much greater than 1,
+since this is how it interprets 0xffff and 0x0001 -- not as -1 and 1).
+
+It would not, however, be difficult to provide a workaround for signed
+comparisons. The snippet
+
+mov      r1,  r3
+mov      r2,  r4
+load     0x8000, r0      # 0x8000 = 0b1000000000000000
+and      r0,  r3
+and      r0,  r4
+equ      r3,  r4
+
+Will tell us if two integers have the same sign. If they have the same sign,
+then cmp will tell us their relative order. If they do not, then the negative
+term is lower. 

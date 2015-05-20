@@ -1,0 +1,19 @@
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+Test 5: stdout instructions
+        cld, std, and out
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+This test walks through a few output-related instructions. One surprising
+bug that was found is that I had completely forgotten to put an entry for
+cld into my jump table in xcpu.c! It just hadn't come up until now. This
+was easily fixed.
+
+Apart from that, the program behaved as expected, printing a jumble of
+std information, interspersed with the messages
+
+hi, how are you today?
+fine
+
+The output of ./xsim perfectly matched that of ./xsim_gold, and can be
+found in test.5.out.
+

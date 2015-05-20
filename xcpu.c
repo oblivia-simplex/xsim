@@ -137,7 +137,7 @@ void* build_jump_table(void){
   table[I_CMP]  = cmp;     table[I_EQU]   = equ;     table[I_MOV]   = mov;
   table[I_LOAD] = load;    table[I_STOR]  = stor;    table[I_LOADB] = loadb;
   table[I_STORB]= storb;   table[I_JMP]   = jmp;     table[I_CALL]  = call;
-  table[I_LOADI]= loadi;  
+  table[I_LOADI]= loadi;   table[I_CLD]   = cld; 
   return table;
 }
 /*************************************************

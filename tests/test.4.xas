@@ -1,0 +1,26 @@
+# =-=-=-=-=-=-=-=-=-=-=-
+# Test 4: Bit shifting
+# =-=-=-=-=-=-=-=-=-=-=-
+
+.glob main
+
+main:
+        std
+        push    r14
+        mov     r15, r14
+        loadi   0xaaaa, r0
+        loadi   0x5555, r1
+        loadi   0x1,    r2
+        shr     r2,     r0
+        equ     r0,     r1
+        loadi   0x9999, r3
+        shl     r3,     r3
+        test    r3,     r3
+        neg     r0
+        shl     r2, r1
+        neg     r2
+        shl     r3, r0
+        xor     r0,  r0
+        mov     r14, r15
+        pop     r14
+        ret

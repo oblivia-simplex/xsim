@@ -1,12 +1,14 @@
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# Test 9: Caesar Cypher, using mapbyte function
-# See test.9.txt for details.
+# Test 10: Demonstration of mapbyte, using a
+#          couple simple cyphers.
+# See test.10.txt for details.
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 .glob mapbyte
 .glob puts
 .glob main
 .glob border
 .glob memcpy
+
 main:
         #std
         push   r15
