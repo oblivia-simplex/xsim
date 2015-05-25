@@ -1,0 +1,46 @@
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Test 3: Signed integers
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+.glob main
+
+main:
+        std
+        push    r14             # boilerplate:
+        mov     r15,  r14       # saving the base pointer and stack pointer
+        loadi   1,    r0
+        loadi   2,    r1
+        sub     r1,   r0        # 1-2
+        cmp     r1,   r0        # this will give wonky results, due to cmp's
+        cmp     r0,   r1        # undefined behaviour for signed integers
+        mul     r0,   r1
+        mul     r0,   r1
+        mul     r0,   r1
+        mul     r1,   r1
+        cmp     r1,   r0
+        cmp     r0,   r1
+        sub     r0,   r1
+        cmp     r1,   r0
+        loadi   0xaaaa, r2
+        loadi   0x5555, r3
+        cmp     r3,   r2
+        neg     r2
+        neg     r3
+        cmp     r2,   r3
+        xor     r4,   r4
+        xor     r5,   r5
+        dec     r4
+        dec     r4
+        dec     r5
+        cmp     r4,   r5
+        neg     r4
+        neg     r5
+        cmp     r5,   r4        # a < b --> -b < -a holds, when signs same
+        loadi   0xffff, r6
+        mov     r6,   r7
+        neg     r7
+        equ     r6,   r7        
+        xor     r0,   r0
+        mov     r14,  r15
+        pop     r14
+        

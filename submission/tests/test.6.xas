@@ -1,0 +1,127 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 6: Function calls
+# =-=-=-=-=-=-=-=-=-=-=-=-=
+
+.glob main
+.glob puts
+
+
+
+main:
+        std
+        push    r14
+        mov     r15, r14
+        call    f1
+        loadi   backmsg, r3
+        push    r3
+        cld
+        call    puts
+        std
+        pop     r3
+        xor     r0,  r0
+        mov     r14, r15
+        pop     r14
+        ret
+f1:
+        push    r14
+        mov     r15, r14
+        loadi   0xbeef, r1      # pass a parameter to this one
+        push    r1
+        call    f2
+        pop     r1
+        xor     r0,  r0
+        mov     r14, r15
+        pop     r14
+        ret
+f2:
+        push    r14
+        mov     r15, r14
+        loadi   4,   r2
+        add     r14, r2
+        load    r2,  r3
+        push    r3
+        push    r3
+        push    r3
+        push    r3
+        push    r3
+        loadi   f3,  r4
+        callr   r4
+        pop     r3
+        pop     r3
+        xor     r0,  r0
+        mov     r14, r15
+        pop     r14
+        ret
+f3:
+        push    r14
+        mov     r15, r14
+        loadi   f5,  r5         # now pass a function ptr as a param    
+        push    r5
+        call    f4
+        pop     r5
+        xor     r0,  r0
+        mov     r14, r15
+        pop     r14
+        ret
+f4:
+        push    r14
+        mov     r15, r14
+        loadi   4,   r9
+        add     r14, r9
+        load    r9,  r8
+        callr   r8              # calling f5 (ptr to f5 was passed as param)
+        xor     r0,  r0
+        mov     r14, r15
+        pop     r14
+        ret
+f5:
+        push    r14
+        mov     r15, r14
+        loadi   0xA, r12
+        push    r12
+        call    f6
+        xor     r0,  r0
+        mov     r14, r15
+        pop     r14
+        ret
+# now let's try a recursive function
+# this will loop 10 times (param = 0xA)
+f6:   
+        push    r14
+        mov     r15, r14
+        loadi   4,   r1
+        add     r14, r1
+        load    r1,  r10
+        dec     r10
+        xor     r13, r13
+        inc     r13
+        cmp     r10, r13
+        br      endrec
+        push    r10
+        call    f6
+        jr      skipf7
+endrec:
+        call    f7
+skipf7:
+        xor     r0,  r0
+        mov     r14, r15
+        pop     r14
+        ret
+f7:
+        push    r14
+        mov     r15, r14
+        loadi   endmsg, r0
+        push    r0
+        cld
+        call    puts
+        std
+        pop     r0
+        xor     r0,  r0
+        mov     r14, r15
+        pop     r14
+        ret
+
+endmsg:
+.literal "There..."
+backmsg:
+.literal "...and back again."

@@ -1,0 +1,13 @@
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Hello, world!
+Caesar cipher (with rot = 3): 
+Khoor/#zruog$
+Now rotating back (rot = -3): 
+Hello, world!
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Now let's try a xor encryption (with key = 'GOODBYE, ALL.'): 
+*#(-ue[O3 (
+Decrypting...
+Hello, world!
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+CPU has halted.

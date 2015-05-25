@@ -1,0 +1,14 @@
+=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Test 6: Function Calls
+=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+This test experiments with the instructions most relevant to function calls:
+
+call     ret     callr    push     pop    loadi    load
+
+among a few others. Functions are called directly, with call, by pointers
+stored in registers with callr, with and without parameters, and recursively.
+
+In all cases, the output matched xsim_gold's, without a hitch. No new bugs
+were discovered.
+

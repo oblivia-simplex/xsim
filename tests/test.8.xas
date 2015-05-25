@@ -1,0 +1,35 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 8: Testing Some Known Difficulties with
+#         Data Movement between c->memory[c->reg(N)]
+#        and c->regs[N].
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+.glob main
+
+main:
+        std
+        push    r14
+        mov     r15, r14
+        loadi   0xffff, r0
+        loadi   storage, r1
+        stor    r0, r1
+        loadi   8,  r3
+        add     r3, r1
+        stor    r1, r1
+        load    r1, r1
+        inc     r1
+        load    r1, r1
+        inc     r1
+        load    r1, r1
+        inc     r1
+        load    r1, r1
+        stor    r0, r1
+        load    r0, r0
+        mov     r14, r15
+        pop     r14
+        ret
+
+
+
+storage:
+.words 0x30

@@ -1,0 +1,18 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 8: Testing Some Known Difficulties with
+#         Data Movement between c->memory[c->reg(N)]
+#        and c->regs[N].
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
+A friend has told me that he discovered a bug with his implementation of load,
+whereby attempts to load from the memory pointed to by a register into that
+same register has resulted in some anomalies, which don't match up with the
+output of xsim_gold. I decided that this would be a good thing to test, to see
+if my own implementation falls victim to the same bug.
+
+This test performs a handful of simple operations that take the same register
+for both rS and rD. I'm happy to say that my implementation does not suffer from
+the same bugs.
+
+No new bugs were discovered. 

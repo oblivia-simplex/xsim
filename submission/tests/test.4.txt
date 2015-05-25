@@ -1,0 +1,8 @@
+# =-=-=-=-=-=-=-=-=-=-=-
+# Test 4: Bit shifting
+# =-=-=-=-=-=-=-=-=-=-=-
+
+This was just a basic test on some bitshifting operations. There were no
+surprises here. The expected (and confirmed) output can be found in
+test.4.out.
+

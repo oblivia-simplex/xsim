@@ -1,0 +1,91 @@
+TASK 5: CONSIDER THE xrt0.xas MODULE
+
+.glob main
+
+  loadi Stack, r15
+  call main
+
+.literal 0
+
+.words 512
+Stack:
+
+(1) What two things does it do, and why?
+
+The xrt0.xas module allocates memory for the stack, in such a way that it is
+placed securly above (at a higher address than) the memory segment in which
+the instructions themselves are stored. Since the XCPU simply initializes
+both PC and R15 to 0, if the executed process did not itself allocate stack
+space, then any instruction writing to the stack would risk overwriting code.
+Xrt0 allocates 1024 bytes of stack space with
+
+.words 512
+Stack:
+
+and initializes the stack pointer R15 to the first stack address (marked
+by the label 'Stack:'. Since the stack grows downwards, it will grow into
+the space allocated by .words 512.
+
+After allocating the stack space, xrt0 calls main, and supplies main with
+a terminal signal in the form of '.literal 0' directive.
+
+(2) After the call instruction, there is a .literal 0 directive? What is
+    the purpose of that directive? I.e. why is that directive there?
+
+Xrt0 provides a halt signal in the form of '.literal 0'. When parsed by
+the XCPU, this 0 will be read as an opcode, which will force the XCPU
+to execute the instruction 'bad'. In my implementation, this sets a halt
+flag, and then has the xcpu_execute function return a value of 0, which
+tells xsim to gracefully terminate the process, and to free the memory
+allocated to the CPU structure and the jump table that associates opcodes
+with functions in C. 
+
+(3) What (specifically) would happen if the programme defined in main
+    pushed more than 512 items on the stack?
+
+The first thing that would happen is that the .literal 0 directive would
+be overwritten with whatever data was being written to the stack. If this
+data doesn't contain any null bytes (in the high bytes of their words),
+then, unless a halting signal is otherwise introduced by the executed
+process, it is possible that the process may never terminate. Since
+memory is implemented as a ring buffer in xcpu.c (every index into memory
+is modulo 0x10000), the process would form a closed loop.
+
+As the stack overflowed into the code segment, code memory would be corrupted.
+If the stack items are themselves interpretable as instructions, they will
+be executed when they are traversed by PC. (In my implementation, *any* opcode
+that does not match a specific instruction is treated as an alias of 'bad',
+so in this case the programme will *only* continue executing if it is able to
+treat the overflowing words from the stack as instructions (or as arguments
+to extended instructions).) If the stack data is supplied by a user, then this
+gives the user a means of executing arbitrary code on the XCPU.
+
+(4) What is the value of the PC register after the first loadi instruction?
+
+Relatively speaking, after the first loadi instruction, the value of the PC
+register will be 4 units greater than it was just before loadi was executed.
+To get an exact value, it helps to look a the hexdump of xrt0.xo:
+
+00000000  e1 f0 04 0a c2 00 00 00  00 00 00 00 00 00 00 00  |................|
+00000010  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+*
+00000400  00 00 00 00 00 00 00 00  00 00 00 24 00 00 00 00  |...........$....|
+00000410  02 10 00 ff ff 6d 61 69  6e 00 ff ff 00 06 10 00  |.....main.......|
+00000420  ff ff 00 00 04 0a 01 00  70 ef                    |........p.|
+0000042a
+
+'e1f0 040a' disassembles to 'loadi 0x040a, r15' (which means that 0x040a must
+be the address of the 'Stack:' label). Here we see that it begins at the first
+byte of the binary (.glob is a directive to the assembler, and isn't directly
+represented in the binary), so after it is executed, PC = 4.
+
+(5) Why is it not possible for code outside of xrt0 to determine how many
+    items there are on the stack? What would you change in this module to
+    allow this information to be determined by outside code?
+
+It is not possible for code outside of xrt0 to determine the size of the
+stack because the .words directive is given a constant (literal) argument.
+If, instead, a register or memory address could be given to .words (I am
+not sure if this is currently possible, or would require a change in the
+assembler or linker), then xrt0 could be changed to allow for a variable
+stack (determined at the time of assembly or linkage).

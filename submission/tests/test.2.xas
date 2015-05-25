@@ -1,0 +1,62 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-
+# Test 2: Arithmetic
+# -=-=-=-=-=-=-=-=-=-=-=-=-=
+
+.glob main
+.glob puts
+
+main:
+        std             # turn on legacy debugger
+        push   r15        # boilerplate
+        push   r14
+        mov    r15,  r14
+        push   r0
+        push   r1
+        push   r2
+        push   r3
+        push   r4
+        loadi  0xffff, r5
+        push   r5
+        loadi  0x0,  r2
+        loadi  0x7,  r5
+# ----------------------------------
+# this loop runs through the series
+# 1^1, ..., 7^7
+# ----------------------------------
+expt:
+        inc    r2
+        xor    r1,   r1
+        mov    r2,   r3 
+        #jr while                # raise r3 to the power of r3
+do:
+        mul    r2,   r3
+        inc    r1
+while:
+        dec    r2
+        cmp    r1,   r2
+        inc    r2
+        br     do
+        out    r3
+        push   r3
+        cmp    r2,   r5
+        br     expt
+        xor    r1, r1
+        inc    r1
+do2:
+        pop    r3
+        out    r3
+        cmp    r1,   r5
+        inc    r1
+        br     do2
+### end do2 loop
+        pop    r5
+        pop    r4
+        pop    r3
+        pop    r2
+        pop    r1
+        pop    r0
+        xor    r0,r0
+        pop    r14
+        mov    r14, r15
+        ret
+        

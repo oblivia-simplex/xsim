@@ -1,0 +1,70 @@
+=-=-=-=-=-=-=-=-=-=-=-=-=
+Test 2: Exponentiation
+=-=-=-=-=-=-=-=-=-=-=-=-=
+
+The programme in test.2.xas puts the following instructions to the test:
+
+push          pop           mul      cmp
+br            inc           xor
+
+The purpose of the code is to calculate n^n for the series of integers
+between 2 and 7, inclusive. 
+
+Grepping the my debugger log for disassemblies of the 'mul' instruction
+gives us this:
+
+[mul: R3 <- 0x0001 = 0x0001 * 0x0001]
+[mul: R3 <- 0x0004 = 0x0002 * 0x0002]
+[mul: R3 <- 0x0009 = 0x0003 * 0x0003]
+[mul: R3 <- 0x001b = 0x0003 * 0x0009]
+[mul: R3 <- 0x0010 = 0x0004 * 0x0004]
+[mul: R3 <- 0x0040 = 0x0004 * 0x0010]
+[mul: R3 <- 0x0100 = 0x0004 * 0x0040]
+[mul: R3 <- 0x0019 = 0x0005 * 0x0005]
+[mul: R3 <- 0x007d = 0x0005 * 0x0019]
+[mul: R3 <- 0x0271 = 0x0005 * 0x007d]
+[mul: R3 <- 0x0c35 = 0x0005 * 0x0271]
+[mul: R3 <- 0x0024 = 0x0006 * 0x0006]
+[mul: R3 <- 0x00d8 = 0x0006 * 0x0024]
+[mul: R3 <- 0x0510 = 0x0006 * 0x00d8]
+[mul: R3 <- 0x1e60 = 0x0006 * 0x0510]
+[mul: R3 <- 0xb640 = 0x0006 * 0x1e60]
+[mul: R3 <- 0x0031 = 0x0007 * 0x0007]
+[mul: R3 <- 0x0157 = 0x0007 * 0x0031]
+[mul: R3 <- 0x0961 = 0x0007 * 0x0157]
+[mul: R3 <- 0x41a7 = 0x0007 * 0x0961]
+[mul: R3 <- 0x1cb91 = 0x0007 * 0x41a7]  (overflow!)
+[mul: R3 <- 0x590f7 = 0x0007 * 0xcb91]  (overflow!)
+
+Here, we can verify that the programme is doing what it was intended
+to do: generating n^n for each n between 2 and 7 -- though, of course,
+the values given for 7^7 are erroneous, due to overflow. This is to
+be expected, but should be pointed out as a potential source of bugs
+when dealing with large numbers in xcpu calculations.
+
+Bugs Found:
+=-=-=-=-=-=
+One interesting bug that came to light was that cmp is undefined for signed
+integers. This may be seen as a shortcoming, since sub and neg are defined
+to behave well for 2'sC negative integers. However, this bug is rooted in
+the xsim_gold binary as well, and repairing it -- if it is considered in
+need of repair -- in my code will break compatibility with xsim_gold. I am
+therefore leaving it untouched for the time being. As it stands, cmp will
+treat 0xffff (-1) as *greater* than 0x0001, but also greater than 0xfffe (-2).
+This means that we cannot even interpret cmp as bearing on absoulte values.
+
+This bug came to light when I was building a simple loop, and needed to
+compare -1 to another positive integer. I have changed the code so that it
+performs the intended exponentiation operations, but will devote the next
+unit of tests to 2'sC signed integers. If the expected bugs are reflected
+in xsim_gold as well, they will not be repaired at this stage, but
+suggestions for modifying xsim_gold may be put forward. 
+
+Further remarks:
+---------------
+We can see, in the debugger output, that it may be worthwhile to add an
+OVERFLOW flag to the state register, where there is still ample room for
+one (only 2 of the 8 bits are currently being utilized). This could be
+implemented without breaking compatibility with xsim_gold. It should be
+simple enough to avoid any conflicts with the existing tests that are in
+place in xcpu.c for the CONDITION and DEBUG flags. 

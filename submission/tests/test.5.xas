@@ -1,0 +1,69 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 5: stdout instructions:
+#         std, cld, and out
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+.glob main
+
+main:
+        std
+        push    r14
+        mov     r15, r14
+
+        cld
+        loadi   0x68, r9
+        loadi   0x69, r10
+        out     r9
+        out     r10
+        loadi   readsomethinghere, r0     
+        jr while
+do:
+        out      r2
+        inc      r0
+while:
+        loadb    r0, r2 
+        test     r2, r2
+        br       do
+        std
+        loadi   writesomethinghere, r0
+        loadi   0x0a, r6
+        storb   r6, r0
+        inc     r0
+        loadi   0x66, r6
+        storb   r6, r0
+        inc     r0
+        loadi   0x69, r6
+        storb   r6, r0
+        inc     r0
+        loadi   0x6e, r6
+        storb   r6, r0
+        inc     r0
+        loadi   0x65, r6
+        storb   r6, r0
+        inc     r0
+        loadi   0x0a, r6
+        storb   r6, r0
+        inc     r0
+        loadi   0x6, r10
+        sub     r10, r0
+        cld
+        jr while2
+do2:
+
+        inc      r0
+        out      r2
+while2:
+        loadb    r0, r2
+        test     r2, r2
+        br       do2        
+        std
+        xor     r0,  r0
+        mov     r14, r15
+        pop     r14
+        ret
+
+readsomethinghere:
+.literal ", how are you today?"
+writesomethinghere:
+.words 0x30
+

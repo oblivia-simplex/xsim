@@ -1,0 +1,52 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 7: Loading and Storing
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+.glob main
+.glob puts
+
+main:
+        std
+        push    r14
+        mov     r15, r14
+        xor     r0,  r0
+        xor     r2,  r2
+        loadi   data, r13
+        loadi   storage, r11
+        mov     r13, r0
+do:
+        loadb   r0,  r2
+        mov     r2,  r4
+        not     r4
+        test    r4,  r4
+        br      endloop
+        storb   r2,  r11
+        inc     r11
+        inc     r0
+        jr      do
+endloop:
+        inc     r11
+        inc     r11
+        xor     r4, r4
+        stor    r4, r11
+        inc     r11
+        inc     r11
+        loadi   0xABAD, r4
+        stor    r4,  r11
+        inc     r11
+        inc     r11
+        loadi   0x1DEA, r4
+        stor    r4,  r0
+        loadi   storage, r11
+        push    r11
+        call    puts
+        pop     r11
+        xor     r0,  r0
+        mov     r14, r15
+        pop     r14
+
+data:
+.literal "Here is a string, with some arbitrary text in it."
+storage:
+.words 0x40
+.literal 0        

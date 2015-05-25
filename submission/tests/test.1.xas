@@ -1,0 +1,129 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-
+# Test 1: Logical Operations
+# -=-=-=-=-=-=-=-=-=-=-=-=-=
+
+.glob main
+.glob puts
+
+main:
+        std             # turn on legacy debugger
+        push r15        # boilerplate
+        push r14
+        mov  r15, r14
+        push r0
+        push r1
+        push r2
+        push r3
+        push r4
+        push r5
+#
+        loadi 0x41, r5          # Alphabetic counter
+        loadi 0xffff, r0
+        loadi 0x0000, r1
+        not   r1
+        test  r1, r0
+        br    fine4             
+        jmp   error             # r5 = 'A'
+fine4:
+        not   r0
+        not   r1
+        xor   r1, r0
+        not   r0
+        inc   r5
+        test  r0, r0
+        br    fine3
+        jmp   error             # r5 = 'B'
+fine3:
+        not   r1
+        xor   r1, r0
+        or    r0, r1
+        not   r1
+        not   r1
+        inc   r5
+        test  r1, r1
+        br    fine0
+        jmp   error             # r5 = 'C'
+fine0:
+        loadi 0x0001, r0
+        loadi 0xfffe, r1
+        loadi 0x0000, r2 # should be only false
+        loadi 0x1234, r3
+        loadi 0xf000, r4
+        test  r4, r4
+        test  r3, r3
+        test  r2, r2
+        test  r1, r1
+        not   r0
+        not   r1
+        not   r2
+        inc   r5                # r5 = 'D'
+        test  r2, r2
+        br    fine1
+        jmp   error
+fine1:
+        loadi 0x1, r1
+        mov   r1, r0
+        not   r1
+        mov   r1, r3
+        mov   r1, r2
+        and   r0, r2
+        not   r2
+        not   r1
+        not   r3
+        or    r1, r3
+        equ   r1, r3            # De Morgan's
+        inc   r5                # r5 = 'E'
+        br    fine5
+        jmp  error
+fine5:
+        loadi 0xfffe, r3
+        loadi 0xfffe, r4
+        and   r3,r4
+        loadi 0xaaaa, r3  # = 0b1010101010101010
+        loadi 0x5555, r4  # = 0b0101010101010101
+        mov   r3, r0
+        mov   r4, r1
+        inc   r5                # r5 = 'F'
+        test  r1, r0
+        br    err1
+        jr    fine6
+err1:
+        jmp   error
+fine6:
+        or    r3, r4
+        not   r4
+        inc   r5                # r5 = 'G'
+        test  r4, r4
+        br    err2
+        jr    fine7
+err2:
+        jmp   error
+fine7:
+        loadi okay, r4
+        push  r4
+        call  puts
+        pop   r4
+        pop   r3
+        pop   r2
+        pop   r1
+        pop   r0
+        mov   r14, r15
+        xor   r0, r0
+        ret
+        
+
+error:  
+        loadi errormsg, r4
+        push r4
+        call puts
+        pop r4
+        out r5
+        loadi 0xa, r5
+        out r5
+        .literal 0
+
+errormsg:
+.literal "Logic error!"
+
+okay:
+.literal "Okay!"

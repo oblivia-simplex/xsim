@@ -1,0 +1,36 @@
+=-=-=-=-=-=-=-=-=-=-=-=-
+Test 1: Logic Operations
+=-=-=-=-=-=-=-=-=-=-=-=-
+
+This test runs through a number of logic operations, as well as a bit
+of flow control. Instructions tested include:
+
+and     or       xor          not
+cmp     br       jr           jmp
+
+A bit of incidental testing of push, pop, call, and ret is also involved,
+but the focus is on the logic operations.
+
+The expected output (obtained from xsim_gold) is to be found in the file
+test.1.out.
+
+Bugs Found:
+=-=-=-=-=-=
+
+In the course of this test, it became apparent that my file loading function
+had a bug in it. I had been using -- without incident so far -- 0xFF as the
+end-of-file marker. This seemed to work well enough, until I entered data
+(via an xas file) containing 0xFF bytes, at which point my file loader
+stopped reading the code. This led to some surprisingly premature halts.
+
+Another bug that came to light -- entirely accidentally -- was the tendency
+of my CPU to segfault under certain circumstances. This bug surfaced once
+I changed the file loader to terminate only when it received a 1 return
+value from the stdio.h function feof(). The segfaults were caused by the
+0xFF opcode (which only shows up when there is, in fact, an overflow on
+the level of the XCPU -- and so a segfault on the host system in fact
+reflected a segfault of sorts on the virtual machine; interesting as this
+was, it had to be fixed). The problem was that my jump table contained no
+legal address for the pseudo-opcode 0xFF, and it had been initialized with
+pointers to bad() only up to 0xFE. This was easily changed by initializing
+the jump table up to and including 0xFF.
