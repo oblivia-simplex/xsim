@@ -1,0 +1,14 @@
+loadi goodbye, r0
+push r0
+loop:
+  trap
+  loadi 1000, r0
+wait:
+  dec r0
+  test r0, r0
+  br wait
+  jr loop
+.literal 0
+
+goodbye:
+  .literal "G"

@@ -9,7 +9,7 @@ typedef void *xreloc;
 extern xreloc *xreloc_init( unsigned char *mem, FILE *fp );
 extern void xreloc_global( xreloc xr, char *name );
 extern int  xreloc_symbol( xreloc xr, int loc, char *name );
-extern int  xreloc_reloc( xreloc xr, int loc, int size, char *name, 
+extern int  xreloc_reloc( xreloc xr, int loc, int size, char *name,
                            unsigned char flags );
 
 extern int  xreloc_load_table( xreloc xr, int size, int base );

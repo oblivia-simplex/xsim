@@ -1,22 +1,22 @@
- loadi 1, r1
- loadi 2, r2
- loadi 3, r3
- loadi 4, r4
- loadi 5, r5
- loadi 6, r6
- loadi 7, r7
- loadi 8, r8
- loadi 9, r9
- loadi 10, r10
- loadi 11, r11
- loadi 12, r12
- loadi 13, r13
- loadi 14, r14
+ loadi 21, r1
+ loadi 22, r2
+ loadi 23, r3
+ loadi 24, r4
+ loadi 25, r5
+ loadi 26, r6
+ loadi 27, r7
+ loadi 28, r8
+ loadi 29, r9
+ loadi 30, r10
+ loadi 31, r11
+ loadi 32, r12
+ loadi 33, r13
+ loadi 34, r14
 
 loop:
-  loadi 88, r0
+  loadi 90, r0
   out r0
-  loadi 105, r0
+  loadi 385, r0
   sub r1, r0
   sub r2, r0
   sub r3, r0

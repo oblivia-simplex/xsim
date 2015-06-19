@@ -13,7 +13,7 @@
 #include "xreloc.h"
 
 #define FILE_IDX 2
-#define MIN_PCB (32 + 1 + 1) 
+#define MIN_PCB (32 + 1 + 1)
 #define TOP_OFF 1
 
 typedef struct program *prog;
@@ -51,7 +51,7 @@ int main( int argc, char **argv ) {
     printf( "       <main> object file where execution begins\n" );
     printf( "       [objs] zero or more object files to be linked\n" );
     return 1;
-  } 
+  }
 
   fs = alloc( num * sizeof( struct stat ) );
   obj = alloc( XIS_MEM_SIZE );
@@ -71,7 +71,7 @@ int main( int argc, char **argv ) {
 
   relocs = xreloc_init( obj, stdout );
 
-  offset = 0; 
+  offset = 0;
   for( i = 0; i < num; i++ ) {
     printf( "%20s at offset %d\n", argv[i + FILE_IDX], offset );
     fp = fopen( argv[i + FILE_IDX], "rb" );
@@ -95,6 +95,12 @@ int main( int argc, char **argv ) {
   if( !xreloc_relocate( relocs ) ) {
     return 1;
   }
+
+  offset = xreloc_store_table( relocs, offset, 0 );
+  if( !offset ) {
+    return 1;
+  }
+
   xreloc_fini( relocs );
 
   fp = fopen( argv[1], "wb" );

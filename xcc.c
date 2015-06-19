@@ -39,7 +39,7 @@ int main( int argc, char **argv ) {
       i++;
       if( i < argc ) {
         target = argv[i];
-      } 
+      }
       continue;
     }
 
@@ -47,7 +47,7 @@ int main( int argc, char **argv ) {
     ext = strrchr( objs[num], '.' );
     if( ext && !strcmp( XAS_EXT, ext ) ) {
       *ext = 0;
-      sprintf( path, "%s %s%s %s%s", XAS, objs[num], XAS_EXT, objs[num], 
+      sprintf( path, "%s %s%s %s%s", XAS, objs[num], XAS_EXT, objs[num],
                XO_EXT );
       rc = system( comm );
       if( rc ) {
@@ -63,7 +63,7 @@ int main( int argc, char **argv ) {
       err++;
     }
   }
-   
+
   if( target == NULL ) {
       printf( "error: no target specified\n" );
       err++;
@@ -73,7 +73,7 @@ int main( int argc, char **argv ) {
     return 1;
   }
 
-  
+
   sprintf( path, "%s %s %s", XLD, target, XRT0 );
   plen = strlen( path );
   for( i = 0; i < num; i++ ) {

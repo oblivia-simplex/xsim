@@ -9,11 +9,11 @@
 #include "xreloc.h"
 
 /* Tokens: words {.}?[a-zA-Z_][a-zA-Z0-9_*]
-   ints  -?[0-9]+
-   colon :
-   literal "{[^"]|{\"}}*"
-   comment #.*$ (ignore)
-*/
+           ints  -?[0-9]+
+           colon :
+           literal "{[^"]|{\"}}*"
+           comment #.*$ (ignore)
+ */
 
 enum {
   NO_TOKEN,
@@ -41,7 +41,7 @@ static char *directives[D_NUM + 1] = { ".literal", ".words", ".glob", NULL };
 
 static int getregister( char *tok,  int *r ) {
   int i;
-  
+
   if( !r ) {
     r = &i;
   }
@@ -66,7 +66,7 @@ static int token( char *buf, char *tok, int *val ) {
 
   if( buf ) {
     cur = buf;
-  } 
+  }
 
   if( !val ) {
     val = &v;
@@ -78,25 +78,25 @@ static int token( char *buf, char *tok, int *val ) {
   tok[1] = 0;
 
   switch( *cur ) {
-  case 0: 
+  case 0:
     return NO_TOKEN;
-  case '#': 
+  case '#':
     return NO_TOKEN;
-  case '-': 
+  case '-':
     intp = cur;
     cur++;
     tok++;
     if( !isdigit( *cur ) ) {
       *tok = *cur;
-      tok++; 
+      tok++;
       *tok = 0;
       return BAD_INT;
     }
     break;
-  case ':': 
+  case ':':
     cur++;
     return COLON;
-  case ',': 
+  case ',':
     cur++;
     return COMMA;
   }
@@ -125,12 +125,12 @@ static int token( char *buf, char *tok, int *val ) {
 
     if( hex ) {
       if( sscanf( intp, "%x", val ) < 1 ) {
-        return BAD_INT; 
+        return BAD_INT;
       }
       *tok++ = *cur++;
       *tok++ = *cur++;
     } else {
-      sscanf( intp, "%d", val ); 
+      sscanf( intp, "%d", val );
     }
 
     for( ; isintdigit( *cur, hex ); cur++ ) {
@@ -150,11 +150,11 @@ static int token( char *buf, char *tok, int *val ) {
     if( ( strlen( w ) <= 3 ) && ( *w == 'r' ) && getregister( w, val ) ) {
       return REGISTER;
     }
-    for( ip = x_instructions; ip->inst; ip++ ) { 
+    for( ip = x_instructions; ip->inst; ip++ ) {
       if( !strcmp( w, ip->inst ) ) {         /* if instruction found */
         return INSTRUCTION;
       }
-    } 
+    }
     return LABEL;
   } else if( *cur == '.' ) {
     w = tok;
@@ -174,14 +174,14 @@ static int token( char *buf, char *tok, int *val ) {
     return BAD_TOKEN;
   }
 }
-  
+
 
 int main( int argc, char **argv ) {
 
   FILE *fp;
   xreloc relocs;          /* relocations */
   unsigned char *obj;      /* pointer to object code being generated */
-  char buf[85];            /* buffers for parsing each line */
+  char buf[170];            /* buffers for parsing each line */
   char tok[85];
   int value;               /* current index or address value */
   int r1, r2;              /* current registers to use */
@@ -190,23 +190,22 @@ int main( int argc, char **argv ) {
   int line = 0;            /* current line being parsed */
   int err = 0;             /* error counter (0 is good */
   int rc = 0;              /* return code */
-  int globs = 0;           /* global symbols are present */
   struct x_inst *ip;      /* pointer into intruction-pneumonic table */
 
-  /* check for usage errors */
+                           /* check for usage errors */
   if( argc < 3 ) {
     printf( "usage: xas infile.as outfile.xo\n" );
     return 1;
   }
 
-  /* open input file */
+                           /* open input file */
   fp = fopen( argv[1], "r" );
   if( !fp ) {
     printf( "error: could not open input file %s\n", argv[1] );
     return 1;
   }
 
-  /* allocate memory for object file */
+                           /* allocate memory for object file */
   obj = malloc( XIS_MEM_SIZE + 85 ); /* + 85 for overflow */
   if( !obj ) {
     printf( "error: memory allocation (%d) failed\n", XIS_MEM_SIZE );
@@ -218,9 +217,9 @@ int main( int argc, char **argv ) {
     printf( "error: could not initialize relocation system\n" );
   }
 
-  /* parsing and encoding loop 
+  /* parsing and encoding loop
    */
-  while( fgets( buf, 80, fp ) ) {   /* read line from input file */
+  while( fgets( buf, 169, fp ) ) {   /* read line from input file */
     line++;
 
     rc = token( buf, tok, NULL );
@@ -245,7 +244,8 @@ int main( int argc, char **argv ) {
       r2 = 0;
       value = 0;
 
-      for( ip = x_instructions; ip->inst; ip++ ) { 
+      // should be hashed
+      for( ip = x_instructions; ip->inst; ip++ ) {
         if( !strcmp( tok, ip->inst ) ) {       /* if instruction found */
           if( XIS_NUM_OPS( ip->code ) == 1 ) {
             if( ip->code & XIS_1_IMED ) {
@@ -253,9 +253,9 @@ int main( int argc, char **argv ) {
                 printf( "error:%d: expecting a label operand\n", line );
                 err++;
                 break;
-              } 
+              }
               /* add addr reloc to be fixed up */
-              err += !xreloc_reloc( relocs, pos, XIS_REL_SIZE, tok, 
+              err += !xreloc_reloc( relocs, pos, XIS_REL_SIZE, tok,
                                     XRELOC_RELATIVE );
             } else if( token( NULL, tok, &r1 ) != REGISTER ) {
               printf( "error:%d: expecting register operand \n", line );
@@ -278,13 +278,13 @@ int main( int argc, char **argv ) {
             }
           } else if( XIS_NUM_OPS( ip->code ) == XIS_EXTENDED ) {
             rc = token( NULL, tok, &value );
-            
+
             if( rc == LABEL ) {
               /* add addr reloc to be fixed up */
-              err += !xreloc_reloc( relocs, pos + 2, XIS_ABS_SIZE, tok, 
+              err += !xreloc_reloc( relocs, pos + 2, XIS_ABS_SIZE, tok,
                                     XRELOC_ABSOLUTE );
             } else if( rc != INT ) {
-              printf( "error:%d: expecting an integer or label operand\n", 
+              printf( "error:%d: expecting an integer or label operand\n",
                       line );
               err++;
               break;
@@ -302,7 +302,7 @@ int main( int argc, char **argv ) {
               }
             }
           }
-         
+
           if( token( NULL, tok, NULL ) != NO_TOKEN ) {
             printf( "error:%d: unexpected token '%s' \n", line, tok );
             err++;
@@ -316,7 +316,7 @@ int main( int argc, char **argv ) {
           obj[pos] = ( r1 << 4 ) | ( r2 & 0xf );
           pos++;
 
-          /* if extended, encode value or address */
+                                   /* if extended, encode value or address */
           if( XIS_NUM_OPS( ip->code ) == XIS_EXTENDED ) {
             obj[pos] = value >> 8;
             pos++;
@@ -364,7 +364,6 @@ int main( int argc, char **argv ) {
           continue;
         }
         xreloc_global( relocs, tok );
-        globs = 1;
       }
     } else {
       printf( "error:%d: expecting instruction or directive\n", line );
@@ -385,11 +384,9 @@ int main( int argc, char **argv ) {
     err++;
   }
 
-  if( globs ) {
-    size = xreloc_store_table( relocs, size, 0 );
-    if( !size ) {
-      err++;
-    }
+  size = xreloc_store_table( relocs, size, 0 );
+  if( !size ) {
+    err++;
   }
 
   xreloc_fini( relocs );
@@ -408,18 +405,18 @@ int main( int argc, char **argv ) {
     printf( "writing %d bytes\n", size );
   }
 
- 
+
   unlink( argv[2] );           /* nuke old output file */
 
   fp = fopen( argv[2], "wb" ); /* open output file */
   if( !fp ) {
     printf( "error: could not open output file %s\n", argv[2] );
     return 1;
-    /* write output file */
+                               /* write output file */
   } else if( fwrite( obj, 1, size, fp ) < size ) {
     printf( "error: could not write output file %s\n", argv[2] );
     unlink( argv[2] );
-  } 
+  }
   fclose( fp );                /* close file */
 
   return 0;

@@ -35,6 +35,26 @@ typedef void (*IHandler)(xcpu*, unsigned short int);
 
 extern int xcpu_execute( xcpu *c, IHandler *table ); 
 
+
+// i should be 0 if regular interrupt, 2 if trap, 4 if fault, so enum*2?
+enum {
+  X_E_INTR,    /* Interrupt has occurred */ // 0 
+  X_E_TRAP,    /* Trap has occurred */      // 1
+  X_E_FAULT,   /* Fault has occurred */     // 2
+  X_E_LAST                                  // 3  
+};
+
+/* title: generate an exception (interrupt, trap, or fault)
+ * param: pointer to CPU context, type of exception
+ *        (X_E_INTR, X_E_TRAP, X_E_FAULT)
+ * function: generates the exception, pushes current state register and
+             pc on stack, jumps to handler, sets the X_STATE_IN_EXCEPTION
+ *           bit in state register
+ * returns: 1 if successful, 0 if not
+ */
+extern int xcpu_exception( xcpu *c, unsigned int ex );
+
+
 #endif
 
 

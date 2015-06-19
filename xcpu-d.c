@@ -1,4 +1,3 @@
-#define XCPU
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,13 +6,11 @@
 #include "xis.h"
 #include "xcpu.h"
 
-
-//#define X_INSTRUCTIONS_NOT_NEEDED
+#define X_INSTRUCTIONS_NOT_NEEDED
 
 #define WORD_SIZE 2    // word size in bytes
 #define BYTE 8         // byte size in bits
 #define MEMSIZE 0x10000
-
 
 // a handy macro for fetching word-sized chunks of data from memory
 #define FETCH_WORD(ptr) \
@@ -53,15 +50,13 @@
 /** halt flag **/
 int _halt = 1; // set to 0 when BAD instruction encountered.
 
-
-#include "xdb.c"
-
-extern void xcpu_pretty_print(xcpu *c);
+char prchar(char c);
+void xcpu_pretty_print(xcpu *c);
 void xcpu_print(xcpu *c);
 int xcpu_execute( xcpu *c, IHandler *table);
 int xcpu_exception( xcpu *c, unsigned int ex );
 unsigned short int fetch_word(unsigned char *mem, unsigned short int ptr);
-
+void load_programme(xcpu *c, FILE *fd);
 void * build_jump_table(void);
 void destroy_jump_table(void * addr);
 void fatal(char* errmsg);
@@ -98,6 +93,21 @@ void fatal(char *errmsg){
   fprintf(stderr, "%s\n", errmsg);
   exit(EXIT_FAILURE);  
   // some memory-freeing should happen here too...
+}
+/**************************************************************************
+   Load a programme into memory, given a file descriptor. 
+ **************************************************************************/
+void load_programme(xcpu *c, FILE *fd){
+  unsigned int addr = 0;
+  do
+    c->memory[addr++] = fgetc(fd);
+  while (!feof(fd) && addr < MEMSIZE);
+  if (addr >= MEMSIZE){
+    char msg[70]; 
+    sprintf(msg, "Programme larger than %d bytes. Too big to fit in memory.",
+            MEMSIZE);
+    fatal(msg);
+  }
 }
 /***************************************************************************
    CREATE A JUMP TABLE TO THE INSTRUCTION FUNCTIONS
@@ -141,51 +151,79 @@ void* build_jump_table(void){
 void destroy_jump_table(void* table){
   free(table);
 }
+char prchar(char c){
+  return ('A' <= c && c <= 'z')? c : '.';
+}
+/*****************************************************************************
+ * Display *thorough* information about the current CPU context, incuding 
+ * register contents and nearby code and stack memory. The channel used
+ * by xcpu_pretty_print is stderr, by default. This allows us to let
+ * pretty_print run while still collecting the legacy debugging output from
+ * stdout, for purposes of comparison with xsim_gold.
+ *****************************************************************************/
+void xcpu_pretty_print(xcpu *c){
+  int i;
+  char * cnd = "CONDITION ";
+  char * dbg = "DEBUG ";
+  char flags[17] = "";
+  if (c->state & 0x0001) strcat(flags,cnd);
+  if (c->state & 0xFFFE) strcat(flags,dbg); // a bit redundant...
+                                
+  fprintf(LOG, "PC: %4.4x, State: %4.4x ( Flags: %s)"
+          "\n-------=oO( REGISTERS )Oo=-----------------------------------------------------\n", c->pc, c->state, flags );
+  for( i = 0; i < X_MAX_REGS; i++ ) {
+    fprintf(LOG, "%4.4x", c->regs[i] );
+    if (i < X_MAX_REGS-1) fprintf(LOG," ");
+  }
+  fprintf(LOG, "\n" );
+  fprintf(LOG, "-------=oO( STACK )Oo=---------------------------------------------------------\n");
+  for( i = 0; i < 0x1e; i+=2){
+    fprintf(LOG, "%4.4x: %2.2x %2.2x | ",
+            (c->regs[X_STACK_REG]+i) % MEMSIZE,
+            c->memory[(c->regs[X_STACK_REG]+i) % MEMSIZE],
+            c->memory[(c->regs[X_STACK_REG]+i+1) % MEMSIZE]);
+    if ((i+2)% 0xA ==0 | i == 0x1f) fprintf(LOG, "\n");
+  }
+  for( i = 0; i < 0x1e; i+=2){
+    fprintf(LOG, "%4.4x: %c %c | ",
+            (c->regs[X_STACK_REG]+i) % MEMSIZE,
+            prchar(c->memory[(c->regs[X_STACK_REG]+i) % MEMSIZE]),
+            prchar(c->memory[(c->regs[X_STACK_REG]+i+1) % MEMSIZE]));
+    if ((i+2)% 0xA ==0 | i == 0x1f) fprintf(LOG, "\n");
+  }
+  fprintf(LOG,"-------=oO( CODE )Oo=----------------------------------------------------------\n");
+  for(i=0; i < 0x1e; i+=2){
+    fprintf(LOG, "%4.4x: %2.2x %2.2x | ",
+            c->pc+i,
+            c->memory[(c->pc+i) % MEMSIZE],
+            c->memory[(c->pc+i+1) % MEMSIZE]);
+    if ((i+2)% 0xA ==0 | i == 0x1f) fprintf(LOG, "\n");
+  }
+  for(i=0; i < 0x1e; i+=2){
+    fprintf(LOG, "%4.4x: %c %c | ",
+            c->pc+i,
+            prchar(c->memory[(c->pc+i) % MEMSIZE]),
+            prchar(c->memory[(c->pc+i+1) % MEMSIZE]));
+    if ((i+2)% 0xA ==0 | i == 0x1f) fprintf(LOG, "\n");
+  }
+  fprintf(LOG,"*******************************************************************************\n");
+}
 /******************************************
  Display information about the xcpu context
  (Legacy debugger.)
 *******************************************/
 void xcpu_print( xcpu *c ) {
+  // xcpu_pretty_print is a thorough (& attractive) debugging module, which
+  // prints to stderr by default (output channel is controlled by the macro
+  // LOG, defined at the head of this file).
   int i;
-  unsigned int op1;
-  int op2;
-
   fprintf( stdout, "PC: %4.4x, State: %4.4x: Registers:\n", c->pc, c->state );
   for( i = 0; i < X_MAX_REGS; i++ ) {
     fprintf( stdout, " %4.4x", c->regs[i] );
   }
   fprintf( stdout, "\n" );
 
-  op1 = c->memory[c->pc];
-  op2 = c->memory[c->pc + 1];
-  for( i = 0; i < I_NUM; i++ ) {
-    if( x_instructions[i].code == c->memory[c->pc] ) {
-      fprintf( stdout, "%s ", x_instructions[i].inst );
-      break;
-    }
-  }
-
-  switch( XIS_NUM_OPS( op1 ) ) {
-  case 1:
-    if( op1 & XIS_1_IMED ) {
-      fprintf( stdout, "%d", op2 );
-    } else {
-      fprintf( stdout, "r%d", XIS_REG1( op2 ) );
-    }
-    break;
-  case 2:
-    fprintf( stdout, "r%d, r%d", XIS_REG1( op2 ), XIS_REG2( op2 ) );
-    break;
-  case XIS_EXTENDED:
-    fprintf( stdout, "%u", (c->memory[c->pc + 2] << 8) | c->memory[c->pc + 3] );
-    if( op1 & XIS_X_REG ) {
-      fprintf( stdout, ", r%d", XIS_REG1( op2 ) );
-    }
-    break;
-  }
-  fprintf( stdout, "\n" );
 }
-
 /************************************************************
  Read the opcode, and use it as an index into the jump table. 
  Continue returning 1 until the programme halts (and the global
@@ -241,104 +279,214 @@ unsigned short int fetch_word(unsigned char *mem, unsigned short int ptr){
  *********************************/
 
 INSTRUCTION(bad){
+  if (MOREDEBUG) fprintf(LOG, "[BAD: signal to halt]\n");
   _halt = 0; // global flag variable
 }
 INSTRUCTION(ret){
   c->pc = FETCH_WORD(c->regs[X_STACK_REG]);
   c->regs[X_STACK_REG] += WORD_SIZE;
+  if (MOREDEBUG) fprintf(LOG, "[ret: return to <%4.4x>: %4.4x]\n",
+                         c->pc, FETCH_WORD(c->pc));
 }
 INSTRUCTION(cld){
+  if (MOREDEBUG) fprintf(LOG, "[cld]\n");
   c->state &= 0xfffd;
   // clear the debug bit
 }
 INSTRUCTION(std){
+  if (MOREDEBUG) fprintf(LOG, "[std]\n");
   c->state |= 0x0002;
 }
 INSTRUCTION(neg){
+  if (MOREDEBUG) fprintf(LOG, "[neg: negating %4.4x to %4.4x in R%d with 2'sC]\n",
+                         c->regs[XIS_REG1(instruction)],
+                         (unsigned short int)(~c->regs[XIS_REG1(instruction)]+1),
+                         XIS_REG1(instruction));
   c->regs[XIS_REG1(instruction)] = ~c->regs[XIS_REG1(instruction)]+1;
   // assuming 2'sC
 }
 INSTRUCTION(not){
+  if (MOREDEBUG) fprintf(LOG, "[not: logically negating %4.4x to %4.4x in R%d]\n",
+                         c->regs[XIS_REG1(instruction)],
+                         !c->regs[XIS_REG1(instruction)],
+                         XIS_REG1(instruction));
+  
   c->regs[XIS_REG1(instruction)] = !c->regs[XIS_REG1(instruction)];
 }
 INSTRUCTION(push){
   PUSHER(c->regs[XIS_REG1(instruction)]);
+  if (MOREDEBUG) fprintf(LOG,"[push: pushing %4.4x from reg %d onto stack @ %4.4x]\n",
+                         c->regs[XIS_REG1(instruction)],
+                         XIS_REG1(instruction),
+                         c->regs[X_STACK_REG] );
 }
 INSTRUCTION(pop){
+  if (MOREDEBUG) fprintf(LOG, "[pop: R%d <- %4.4x from top of stack]\n",
+                         XIS_REG1(instruction),
+                         FETCH_WORD(c->regs[X_STACK_REG]));
   c->regs[XIS_REG1(instruction)] = FETCH_WORD(c->regs[X_STACK_REG]);
   c->regs[X_STACK_REG] += WORD_SIZE;
 }
 INSTRUCTION(jmpr){
-   c->pc = c->regs[XIS_REG1(instruction)];
+  c->pc = c->regs[XIS_REG1(instruction)];
+  if (MOREDEBUG) fprintf(LOG, "[jmpr: jumping to %4.4x (R%d)]\n",
+                         c->regs[XIS_REG1(instruction)], XIS_REG1(instruction));
 }
 INSTRUCTION(callr){
   PUSHER(c->pc);
   c->pc = c->regs[XIS_REG1(instruction)];
+  if (MOREDEBUG) fprintf(LOG, "[callr: call to <%4.4x>: %2.2x%2.2x]\n",
+                         c->regs[XIS_REG1(instruction)],
+                         c->memory[c->regs[XIS_REG1(instruction)] %MEMSIZE],
+                         c->memory[(c->regs[XIS_REG1(instruction)]+1)
+                                   % MEMSIZE]);
 }
 INSTRUCTION(out){
+  if (MOREDEBUG) fprintf(LOG, "[out: printing %c (0x%2.2x)] \n",
+                         (char)(c->regs[XIS_REG1(instruction)] & 0xFF),
+                         (char)(c->regs[XIS_REG1(instruction)] & 0xFF));
   fprintf(stdout, "%c", (char)(c->regs[XIS_REG1(instruction)] & 0xFF));
 }
 INSTRUCTION(inc){
+  if (MOREDEBUG) fprintf(LOG, "[inc: increment R%d]\n",
+                         XIS_REG1(instruction));
   c->regs[XIS_REG1(instruction)]++;
 }
 INSTRUCTION(dec){
+  if (MOREDEBUG) fprintf(LOG, "[dec: decrement R%d]\n",
+                         XIS_REG1(instruction));
   c->regs[XIS_REG1(instruction)]--;
 }
 INSTRUCTION(br){
   signed char leap = instruction & 0x00FF;
+  if (MOREDEBUG) fprintf(LOG, "[br: branch %d to <%4.4x>: %4.4x if %1.1x == 1]\n",
+                         leap,
+                         (c->pc - WORD_SIZE)+leap,
+                         FETCH_WORD((c->pc - WORD_SIZE) + leap),
+                         (c->state & 0x0001));
   if (c->state & 0x0001) // if condition bit of state == 1
     c->pc = (c->pc-WORD_SIZE)+leap;
 }
 INSTRUCTION(jr){
   signed char leap = instruction & 0x00FF;
+  if (MOREDEBUG) fprintf(LOG, "[jr: jump %d to <%4.4x>: %4.4x]\n",
+                         leap,
+                         (c->pc - WORD_SIZE)+leap,
+                         FETCH_WORD((c->pc - WORD_SIZE)+leap));
   c->pc = (c->pc-WORD_SIZE)+leap; // second byte of instruction = Label
 }
 INSTRUCTION(add){
+  if (MOREDEBUG) fprintf(LOG, "[add: R%d <- 0x%4.4x = 0x%4.4x + 0x%4.4x]\n",
+                         XIS_REG2(instruction),
+                         (c->regs[XIS_REG1(instruction)] +
+                          c->regs[XIS_REG2(instruction)]),
+                         c->regs[XIS_REG1(instruction)],
+                         c->regs[XIS_REG2(instruction)]);
   c->regs[XIS_REG2(instruction)] =
     c->regs[XIS_REG1(instruction)] + c->regs[XIS_REG2(instruction)];
 }
 INSTRUCTION(sub){
-    c->regs[XIS_REG2(instruction)] =
-      c->regs[XIS_REG2(instruction)] - c->regs[XIS_REG1(instruction)];
+  if (MOREDEBUG) fprintf(LOG, "[sub: R%d <- 0x%4.4x = 0x%4.4x - 0x%4.4x]\n",
+                         XIS_REG2(instruction),
+                         (c->regs[XIS_REG2(instruction)] -
+                          c->regs[XIS_REG1(instruction)]),
+                         c->regs[XIS_REG2(instruction)],
+                         c->regs[XIS_REG1(instruction)]);
+  c->regs[XIS_REG2(instruction)] =
+    c->regs[XIS_REG2(instruction)] - c->regs[XIS_REG1(instruction)];
 }
 INSTRUCTION(mul){
+  if (MOREDEBUG) fprintf(LOG, "[mul: R%d <- 0x%4.4x = 0x%4.4x * 0x%4.4x]\n",
+                         XIS_REG2(instruction),
+                         (c->regs[XIS_REG1(instruction)] *
+                          c->regs[XIS_REG2(instruction)]),
+                         c->regs[XIS_REG1(instruction)],
+                         c->regs[XIS_REG2(instruction)]);
   c->regs[XIS_REG2(instruction)] =
     c->regs[XIS_REG2(instruction)] * c->regs[XIS_REG1(instruction)];
 }
 INSTRUCTION(divide){  
+  if (MOREDEBUG) fprintf(LOG, "[div: R%d <- 0x%4.4x = 0x%4.4x / 0x%4.4x]\n",
+                         XIS_REG2(instruction),
+                         (c->regs[XIS_REG2(instruction)] /
+                          c->regs[XIS_REG1(instruction)]),
+                         c->regs[XIS_REG2(instruction)],
+                         c->regs[XIS_REG1(instruction)]);
   c->regs[XIS_REG2(instruction)] =
     c->regs[XIS_REG2(instruction)] / c->regs[XIS_REG1(instruction)];
 }
 INSTRUCTION(and){
+  if (MOREDEBUG) fprintf(LOG, "[and: R%d <- 0x%4.4x = 0x%4.4x & 0x%4.4x]\n",
+                         XIS_REG2(instruction),
+                         (c->regs[XIS_REG1(instruction)] &
+                          c->regs[XIS_REG2(instruction)]),
+                         c->regs[XIS_REG1(instruction)],
+                         c->regs[XIS_REG2(instruction)]);
   c->regs[XIS_REG2(instruction)] =
     c->regs[XIS_REG1(instruction)] & c->regs[XIS_REG2(instruction)];
 }
 INSTRUCTION(or){
+  if (MOREDEBUG) fprintf(LOG, "[or: R%d <- 0x%4.4x = 0x%4.4x | 0x%4.4x]\n",
+                         XIS_REG2(instruction),
+                         (c->regs[XIS_REG2(instruction)] |
+                          c->regs[XIS_REG1(instruction)]),
+                         c->regs[XIS_REG2(instruction)],
+                         c->regs[XIS_REG1(instruction)]);
   c->regs[XIS_REG2(instruction)] =
     c->regs[XIS_REG2(instruction)] | c->regs[XIS_REG1(instruction)];
 }
 INSTRUCTION(xor){
+  if (MOREDEBUG) fprintf(LOG, "[xor: R%d <- 0x%4.4x = 0x%4.4x ^ 0x%4.4x]\n",
+                         XIS_REG2(instruction),
+                         (c->regs[XIS_REG2(instruction)] ^
+                          c->regs[XIS_REG1(instruction)]),
+                         c->regs[XIS_REG2(instruction)],
+                         c->regs[XIS_REG1(instruction)]);
   c->regs[XIS_REG2(instruction)] =
     c->regs[XIS_REG2(instruction)] ^ c->regs[XIS_REG1(instruction)];
 }
 INSTRUCTION(shr){
+  if (MOREDEBUG) fprintf(LOG, "[shr: R%d <- 0x%4.4x = 0x%4.4x >> 0x%4.4x]\n",
+                         XIS_REG2(instruction),
+                         c->regs[XIS_REG2(instruction)] >>
+                         c->regs[XIS_REG1(instruction)],
+                         c->regs[XIS_REG2(instruction)],
+                         c->regs[XIS_REG1(instruction)]);
   c->regs[XIS_REG2(instruction)] = c->regs[XIS_REG2(instruction)] >>
     c->regs[XIS_REG1(instruction)];
 }
 INSTRUCTION(shl){
+  if (MOREDEBUG) fprintf(LOG, "[shl: R%d <- 0x%4.4x = 0x%4.4x << 0x%4.4x]\n",
+                         XIS_REG2(instruction),
+                         c->regs[XIS_REG2(instruction)] <<
+                         c->regs[XIS_REG1(instruction)],
+                         c->regs[XIS_REG2(instruction)],
+                         c->regs[XIS_REG1(instruction)]);
   c->regs[XIS_REG2(instruction)] = c->regs[XIS_REG2(instruction)] <<
     c->regs[XIS_REG1(instruction)];
 }
 INSTRUCTION(test){
+  if (MOREDEBUG) fprintf(LOG, "[test: set CONDITION flag if (R%d & R%d) is non-zero.]\n",
+                         XIS_REG1(instruction),
+                         XIS_REG2(instruction));
   c->state = (c->regs[XIS_REG1(instruction)] & c->regs[XIS_REG2(instruction)])?
     (c->state | 0x0001) : (c->state & 0xFFFE);
 }
 INSTRUCTION(cmp){
+  if (MOREDEBUG) fprintf(LOG, "[cmp: set CONDITION flag if value in R%d (%4.4x) < value in R%d (%4.4x)]\n",
+                         XIS_REG1(instruction),
+                         c->regs[XIS_REG1(instruction)],
+                         XIS_REG2(instruction),
+                         c->regs[XIS_REG2(instruction)]);
   c->state = (c->regs[XIS_REG1(instruction)] < c->regs[XIS_REG2(instruction)])?
     (c->state | 0x0001) : (c->state & 0xFFFE);
   /** NB: cmp is only defined for unsigned integer values **/
 }
 INSTRUCTION(equ){
+  if (MOREDEBUG)
+    fprintf(LOG, "[equ: set CONDITION flag if value in R%d"
+            " == value in R%d]\n", XIS_REG1(instruction),
+            XIS_REG2(instruction));
   c->state =
     (c->regs[XIS_REG1(instruction)]==c->regs[XIS_REG2(instruction)])?
     (c->state | 0x0001) :
@@ -346,8 +494,16 @@ INSTRUCTION(equ){
 }
 INSTRUCTION(mov){
   c->regs[XIS_REG2(instruction)] = c->regs[XIS_REG1(instruction)];
+  if (MOREDEBUG) fprintf(LOG, "[mov: copy %4.4x from R%d to R%d]\n",
+                         c->regs[XIS_REG1(instruction)],
+                         XIS_REG1(instruction),
+                         XIS_REG2(instruction));
 }
 INSTRUCTION(load){
+  if (MOREDEBUG) fprintf(LOG, "[load: put %4.4x from memory[%4.4x] into R%d]\n",
+                         FETCH_WORD(c->regs[XIS_REG1(instruction)]),
+                         c->regs[XIS_REG1(instruction)],
+                         XIS_REG2(instruction));
   c->regs[XIS_REG2(instruction)] =
     FETCH_WORD(c->regs[XIS_REG1(instruction)]);
 }
@@ -356,12 +512,27 @@ INSTRUCTION(stor){
     (unsigned char) ((c->regs[XIS_REG1(instruction)] >> 8));
   c->memory[(c->regs[XIS_REG2(instruction)]+1) % MEMSIZE] =
     (unsigned char) ((c->regs[XIS_REG1(instruction)]) & 0xFF);
+  if (MOREDEBUG) fprintf(LOG, "[stor: storing %2.2x%2.2x in memory[%4.4x], from R%d]\n",
+                         (unsigned char)  (c->memory[c->regs[XIS_REG2(instruction)] % MEMSIZE]),
+                         (unsigned char) (c->memory[(c->regs[XIS_REG2(instruction)]+1) % MEMSIZE]),
+                         c->regs[XIS_REG2(instruction) % MEMSIZE],
+                         XIS_REG1(instruction));
 }
 INSTRUCTION(loadb){
+  if (MOREDEBUG) fprintf(LOG, "[loadb: loading byte %2.2x (%c) into R%d from memory[%4.4x] ]\n",
+                         c->memory[c->regs[XIS_REG1(instruction)]%MEMSIZE],
+                         prchar(c->memory[c->regs[XIS_REG1(instruction)]%MEMSIZE]),
+                         XIS_REG2(instruction),
+                         c->regs[XIS_REG2(instruction)]);
   c->regs[XIS_REG2(instruction)] =
     c->memory[c->regs[XIS_REG1(instruction)] % MEMSIZE];
 }
 INSTRUCTION(storb){
+  if (MOREDEBUG) fprintf(LOG, "[storb: storing byte %2.2x (%c) in memory[%4.4x] from R%d]\n",
+                         c->regs[XIS_REG1(instruction)] & 0x00FF,
+                         prchar(c->regs[XIS_REG1(instruction)] & 0x00FF),
+                         c->regs[XIS_REG2(instruction)]%MEMSIZE,
+                         XIS_REG1(instruction));
   c->memory[c->regs[XIS_REG2(instruction)] % MEMSIZE] =
     c->regs[XIS_REG1(instruction)] & 0x00FF; // low byte mask
 }
@@ -369,33 +540,44 @@ INSTRUCTION(storb){
  * extended instructions *
  *************************/
 INSTRUCTION(jmp){
-    c->pc = FETCH_WORD(c->pc);
+  if (MOREDEBUG) fprintf(LOG, "[[jmp]]\n");
+  c->pc = FETCH_WORD(c->pc);
 }
 INSTRUCTION(call){
   unsigned short int label = FETCH_WORD(c->pc);
   c->pc += WORD_SIZE;
   PUSHER(c->pc);
   c->pc = label; 
+  if (MOREDEBUG) fprintf(LOG, "[[call to <%4.4x>: %2.2x%2.2x]]\n",
+                         label,
+                         (c->memory[label % MEMSIZE]),
+                         (c->memory[(label+1) % MEMSIZE]));
 }
 INSTRUCTION(loadi){
   unsigned short int value = FETCH_WORD(c->pc);
   c->pc += WORD_SIZE;
   c->regs[XIS_REG1(instruction) ] = value;
+    if (MOREDEBUG) fprintf(LOG, "[[loadi: loading %4.4x into register R%d]]\n",
+                           value, XIS_REG1(instruction));
 }
 /*** INTERRUPT-HANDLING INSTRUCTIONS ***/
 INSTRUCTION(cli){
-    c->state &= 0xFFFB;
+  if (MOREDEBUG) fprintf(LOG, "[cli: Clearing interrupt bit.]\n");
+  c->state &= 0xFFFB;
 }
 INSTRUCTION(sti){
-    c->state |= 0x0004;
+  if (MOREDEBUG) fprintf(LOG, "[sti: Setting interrupt bit.]\n");
+  c->state |= 0x0004;
 }
 INSTRUCTION(iret){
+  if (MOREDEBUG) fprintf(LOG, "[iret: returning from interrupt.]\n");
   c->pc = FETCH_WORD(c->regs[X_STACK_REG]);
   c->regs[X_STACK_REG] += WORD_SIZE;
   c->state = FETCH_WORD(c->regs[X_STACK_REG]);
   c->regs[X_STACK_REG] += WORD_SIZE;
 }
 INSTRUCTION(trap){
+  if (MOREDEBUG) fprintf(LOG, "[trap]\n");
   if (!(c->state & 0x0004)){
     xcpu_exception(c, X_E_TRAP); // very confusing.
     // in xcpu.h, xcpu_exception has the same description given to trap in
@@ -405,7 +587,10 @@ INSTRUCTION(trap){
   }
 }
 INSTRUCTION(lit){
-    c->itr = c->regs[XIS_REG1(instruction)];
+  if (MOREDEBUG) fprintf(LOG, "[lit: ITR <- 0x%4.4x from R%d]\n",
+                         c->regs[XIS_REG1(instruction)],
+                         XIS_REG1(instruction));
+  c->itr = c->regs[XIS_REG1(instruction)];
 }
   
 

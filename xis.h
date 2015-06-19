@@ -11,14 +11,14 @@
 #define XIS_1_IMED  0x20      /* Immediate mask for one operand instructions */
 #define XIS_X_REG  0x20       /* Register mask for extended instructions */
 #define XIS_EXTENDED 0x3      /* Extended instructions */
-#define XIS_NUM_OPS(x)   (((x) >> 6 ) & XIS_EXTENDED)
+#define XIS_NUM_OPS(x) (((x) >> 6 ) & XIS_EXTENDED)
 #define XIS_IS_EXT_OP(x) (XIS_NUM_OPS(x) == XIS_EXTENDED)
-#define XIS_REG1(x)      (((x) >> 4 ) & 0xf)
-#define XIS_REG2(x)      ((x) & 0xf)
+#define XIS_REG1(x)    (((x) >> 4 ) & 0xf)
+#define XIS_REG2(x)    ((x) & 0xf)
 #define XIS_REL_SIZE 8        /* number of bits in a relative address */
 #define XIS_ABS_SIZE 16       /* number of bits in an absolute address */
 
-#define I_NUM 37              /* number of opcodes */
+#define I_NUM 42              /* number of opcodes */
 
 /* Instruction (opcodes) encodings */
 
@@ -29,6 +29,10 @@ enum {
  I_RET     = 0x01, /* 00  000001 */
  I_CLD     = 0x02, /* 00  000010 */
  I_STD     = 0x03, /* 00  000011 */
+ I_CLI     = 0x04, /* 00  000100 */
+ I_STI     = 0x05, /* 00  000101 */
+ I_IRET    = 0x06, /* 00  000110 */
+ I_TRAP    = 0x07, /* 00  000111 */
 
                    /* OPS I OPNUM   Operations with one register operand */
  I_NEG     = 0x41, /* 01  0 00001  */
@@ -40,6 +44,7 @@ enum {
  I_OUT     = 0x47, /* 01  0 00111  */
  I_INC     = 0x48, /* 01  0 01000  */
  I_DEC     = 0x49, /* 01  0 01001  */
+ I_LIT     = 0x4A, /* 01  0 01010  */
 
                    /* OPS I OPNUM   Operations with one immediate operand */
  I_BR      = 0x61, /* 01  1 00001  */
@@ -55,7 +60,7 @@ enum {
  I_XOR     = 0x87, /*  10  000111  */
  I_SHR     = 0x88, /*  10  001000  */
  I_SHL     = 0x89, /*  10  001001  */
- 
+
  I_TEST    = 0x8A, /*  10  001010  */
  I_CMP     = 0x8B, /*  10  001011  */
  I_EQU     = 0x8C, /*  10  001100  */
@@ -81,7 +86,7 @@ struct x_inst { /* instruction mnemonic mapping struct */
 };
 
 
-/* Instructioni-pneumonic mapping table */
+/* Instruction-pneumonic mapping table */
 
 #ifndef X_INSTRUCTIONS_NOT_NEEDED
 #define X_INSTRUCTIONS_NOT_NEEDED
@@ -89,6 +94,10 @@ static struct x_inst x_instructions[I_NUM] = {
  { "ret", I_RET },
  { "cld", I_CLD },
  { "std", I_STD },
+ { "cli", I_CLI },
+ { "sti", I_STI },
+ { "iret", I_IRET },
+ { "trap", I_TRAP },
 
  { "neg", I_NEG },
  { "not", I_NOT },
@@ -99,6 +108,7 @@ static struct x_inst x_instructions[I_NUM] = {
  { "out", I_OUT },
  { "inc", I_INC },
  { "dec", I_DEC },
+ { "lit", I_LIT },
 
  { "br", I_BR },
  { "jr", I_JR },
@@ -112,7 +122,7 @@ static struct x_inst x_instructions[I_NUM] = {
  { "xor", I_XOR },
  { "shr", I_SHR },
  { "shl", I_SHL },
- 
+
  { "test", I_TEST },
  { "cmp", I_CMP },
  { "equ", I_EQU },
@@ -130,6 +140,44 @@ static struct x_inst x_instructions[I_NUM] = {
 
  { NULL,    0 },
 };
+
+/** Why use a struct that you need to search in O(n) when you can use an 
+    array that you can search in O(1)? **/
+
+
+
+/*
+void init_xinst_arr(void){
+  extern char xinst_arr[0x100][8];
+
+  int p;
+  for (p = 0; p < 0x100; p++){
+    strcpy(xinst_arr[p], "bad");
+  }
+  // tidy up this indentation mess!
+  strcpy(xinst_arr[I_BAD],"bad");   strcpy(xinst_arr[I_RET],"ret");
+  strcpy(xinst_arr[I_STD],"std");   strcpy(xinst_arr[I_NEG], "neg");
+  strcpy(xinst_arr[I_NOT] , "not"); strcpy(xinst_arr[I_PUSH] , "push");
+  strcpy(xinst_arr[I_POP], "pop");  strcpy(xinst_arr[I_JMPR] , "jmpr");
+  strcpy(xinst_arr[I_CALLR] , "callr");
+  strcpy(xinst_arr[I_OUT], "out");  strcpy(xinst_arr[I_INC] , "inc");  strcpy(xinst_arr[I_DEC] , "dec");
+  strcpy(xinst_arr[I_BR] , "br");  strcpy(xinst_arr[I_JR] , "jr");  strcpy(xinst_arr[I_ADD] , "add");
+  strcpy(xinst_arr[I_SUB] , "sub");  strcpy(xinst_arr[I_MUL] , "mul");  strcpy(xinst_arr[I_DIV] , "divide");
+  strcpy(xinst_arr[I_AND] , "and");  strcpy(xinst_arr[I_OR] , "or");  strcpy(xinst_arr[I_XOR] , "xor");
+  strcpy(xinst_arr[I_SHR] , "shr");  strcpy(xinst_arr[I_SHL] , "shl");  strcpy(xinst_arr[I_TEST] , "test");
+  strcpy(xinst_arr[I_CMP] , "cmp");  strcpy(xinst_arr[I_EQU] , "equ");  strcpy(xinst_arr[I_MOV] , "mov");
+  strcpy(xinst_arr[I_LOAD] , "load"); strcpy(xinst_arr[I_STOR] , "stor"); strcpy(xinst_arr[I_LOADB] , "loadb");
+  strcpy(xinst_arr[I_STORB], "storb"); strcpy(xinst_arr[I_JMP] , "jmp");  strcpy(xinst_arr[I_CALL] , "call");
+  strcpy(xinst_arr[I_LOADI], "loadi"); strcpy(xinst_arr[I_CLD] , "cld");
+  // New instructions for handling interrupts (must be implemented):
+  strcpy(xinst_arr[I_CLI] , "cli");  strcpy(xinst_arr[I_STI] , "sti");  strcpy(xinst_arr[I_IRET] , "iret");
+  strcpy(xinst_arr[I_TRAP] , "trap"); strcpy(xinst_arr[I_LIT] , "lit");
+
+}
+*/
+
+
+
 #endif
 
 #endif

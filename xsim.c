@@ -3,38 +3,48 @@
 
 #include "xcpu.c"
 
-//void shutdown(xcpu *c);
 void init_cpu(xcpu *c);
 FILE* load_file(char *filename);
-extern void load_programme(xcpu *c, FILE *fd);
+int load_programme(xcpu *c, FILE *fd);
 void shutdown(xcpu *c);
+
 int main(int argc, char *argv[]){
-  if (argc != 3){
-    printf("Usage: %s <cycles> <filename>\n", argv[0]);
+
+  if (argc != 4){
+    printf("Usage: %s <cycles> <filename> <interrupt frequency>\n", argv[0]);
     exit(EXIT_FAILURE);
   }
-  int cycles;
+  // parse command-line options
+  int cycles = atoi(argv[1]);
+  FILE *fd=load_file(argv[2]);
+  int interrupt_freq = atoi(argv[3]);
+                            
   xcpu *c = malloc(sizeof(xcpu));
   init_cpu(c);
-  FILE *fd=load_file(argv[2]);
   load_programme(c, fd); // loads the bytes of fd into c->memory
-  cycles = atoi(argv[1]);
+
 
   // the IHandler type is defined in xcpu.h, and the IHandler jump table
-  // is implemented in xcpu.c
+  // is implemented in xcpu.c // instruction handler, not interrupt handler.
+  // consider renaming to avoid confusion!
   IHandler *table = build_jump_table();
+
+  //char **pneumonic_table = build_disas_table();
   // It is a jump table to the functions handling each instruction.
   char *graceful    = "CPU has halted.";
   char *out_of_time = "CPU ran out of time.";
   int halted, i=0;
   while (i++ < cycles || !cycles){
     if (MOREDEBUG) fprintf(LOG, "<CYCLE %d>\n",i-1);
+    if (i != 0 && i % interrupt_freq == 0)
+          xcpu_exception(c, X_E_INTR); // where does exception var come from?
     if (halted = !xcpu_execute(c, table)) break; 
   } // on halt, halted gets 0; otherwise halted remains 1
   char *exit_msg = (halted)? graceful : out_of_time;
   fprintf(stdout, "%s\n", exit_msg);
   fprintf(LOG, "(%d cycles completed.)\n", i-1);
   destroy_jump_table(table);
+  //free(pneumonic_table);
   shutdown(c);
   return !halted;
 }
@@ -48,6 +58,25 @@ FILE* load_file(char* filename){
   }
   return fd;
 }
+
+
+/**************************************************************************
+   Load a programme into memory, given a file descriptor. 
+ **************************************************************************/
+int load_programme(xcpu *c, FILE *fd){
+  unsigned int addr = 0;
+  do
+    c->memory[addr++] = fgetc(fd);
+  while (!feof(fd) && addr < MEMSIZE);
+  if (addr >= MEMSIZE){
+    char msg[70]; 
+    sprintf(msg, "Programme larger than %d bytes. Too big to fit in memory.",
+            MEMSIZE);
+    fatal(msg);
+  }
+  return addr;
+}
+
 
 void init_cpu(xcpu *c){
   c->memory = calloc(MEMSIZE, sizeof(unsigned char));

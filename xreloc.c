@@ -48,7 +48,7 @@ struct table_struct {
 
 static symbol *findsym( table *t, char *name );
 static void *memalloc( int size, FILE *err );
-static void add_reloc( table *t, symbol *sym, int loc, int size, 
+static void add_reloc( table *t, symbol *sym, int loc, int size,
                        unsigned char flags );
 
 
@@ -100,7 +100,7 @@ int xreloc_symbol( xreloc xr, int loc, char *name ) {
 }
 
 
-int xreloc_reloc( xreloc xr, int loc, int size, char *name, 
+int xreloc_reloc( xreloc xr, int loc, int size, char *name,
                   unsigned char flags ) {
   table *t = (table *) xr;
   symbol *sym;
@@ -109,7 +109,7 @@ int xreloc_reloc( xreloc xr, int loc, int size, char *name,
   assert( name );
 
   if( loc == INV_ADDR ) {
-    fprintf( stderr, "error: invalid address '%x', object may be too big\n", 
+    fprintf( stderr, "error: invalid address '%x', object may be too big\n",
                      INV_ADDR );
     return 0;
   }
@@ -146,7 +146,7 @@ int  xreloc_load_table( xreloc xr, int size, int base ) {
   if( chksum ) { /* chksum failed, no table */
     return -1;
   }
- 
+
   i = GETWORD( t->mem, size + base - 4 );
   if( i != XIS_VERSION ) {
     fprintf( t->err, "error: unknown version %x\n", i );
@@ -173,13 +173,13 @@ int  xreloc_load_table( xreloc xr, int size, int base ) {
       if( sym->loc == INV_ADDR ) {
         sym->loc = loc + base;
       } else {
-        fprintf( t->err, "error: Multiple instances of symbol '%s'\n", 
+        fprintf( t->err, "error: Multiple instances of symbol '%s'\n",
                  sym->name );
         code_size = 0;
       }
-    } 
+    }
 
-    for( loc = GETWORD( t->mem, ent ); loc != INV_ADDR; 
+    for( loc = GETWORD( t->mem, ent ); loc != INV_ADDR;
          loc = GETWORD( t->mem, ent ) ) {
       ent += 2;
       i = t->mem[ent++] & 0xff;
@@ -222,7 +222,7 @@ int  xreloc_store_table( xreloc xr, int size, int base ) {
       ent += strlen( sym->name ) + 1;
       t->mem[ent++] = sym->loc >> 8;
       t->mem[ent++] = sym->loc;
-       
+
       for( r = sym->relocs; r; r = r->next ) {
         t->mem[ent++] = r->loc >> 8;
         t->mem[ent++] = r->loc;
@@ -276,14 +276,14 @@ int  xreloc_relocate( xreloc xr ) {
       continue;
     } else if( sym->flags & FLAG_RELOCAT ) { /* symbols need to be relocated */
       sym->flags |= FLAG_WRITTEN;
-      for( r = sym->relocs; r; r = r->next ) { 
+      for( r = sym->relocs; r; r = r->next ) {
         add_reloc( t, rel, r->loc, r->size, XRELOC_ABSOLUTE );
 
         word = GETWORD( t->mem, r->loc );
         mask = ( 1 << r->size ) - 1;
         loc = ( word & mask ) + sym->loc;
         if( loc & ~mask ) {
-          fprintf( t->err, "error: relocation out of range for symbol '%s'\n", 
+          fprintf( t->err, "error: relocation out of range for symbol '%s'\n",
                    sym->name );
           err = 1;
         }
@@ -294,11 +294,11 @@ int  xreloc_relocate( xreloc xr ) {
     } else if( sym->loc != INV_ADDR ) { /* symbol is defined */
                                /* loop through all relocs for symbol */
       sym->flags |= FLAG_WRITTEN;
-      for( r = sym->relocs; r; r = r->next ) { 
+      for( r = sym->relocs; r; r = r->next ) {
         loc = sym->loc;
         if( r->flags & XRELOC_RELATIVE ) {
           loc -= r->loc;
-          if( ( loc < -( 1 << ( r->size - 1 ) ) ) || 
+          if( ( loc < -( 1 << ( r->size - 1 ) ) ) ||
               ( loc > ( 1 << ( r->size - 1 ) ) - 1 ) ) {
             fprintf( t->err, "error: relocation out of range for symbol '%s'\n",
                      sym->name );
@@ -346,7 +346,7 @@ int  xreloc_fini( xreloc xr ) {
 
 
   return 1;
-}   
+}
 
 
 static symbol *findsym( table *t, char *name ) {
@@ -394,6 +394,6 @@ static void add_reloc( table *t, symbol *sym, int loc, int size,
   r->flags = flags;
   r->size = size;
   r->next = sym->relocs;
-  sym->relocs = r; 
+  sym->relocs = r;
   sym->size += RELOC_SIZE;
 }
