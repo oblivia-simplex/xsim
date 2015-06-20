@@ -1,0 +1,838 @@
+sti 	
+loadi 	0x0658, r15
+loadi 	0x0658, r0
+lit 	r0		# 0x0000
+loadi 	0x002c, r1
+stor 	r1,r0		# 0x0000, 0x0000
+inc 	r0		# 0x0000
+inc 	r0		# 0x0000
+loadi 	0x00e6, r1
+stor 	r1,r0		# 0x0000, 0x0000
+inc 	r0		# 0x0000
+inc 	r0		# 0x0000
+loadi 	0x010c, r1
+stor 	r1,r0		# 0x0000, 0x0000
+call 	0x0136
+jr 	0x0060
+push 	r0		# 0x0000
+call 	0x01f6
+push 	r0		# 0x0000
+push 	r1		# 0x0000
+loadi 	0x0008, r1
+add 	r1,r0		# 0x0000, 0x0000
+loadi 	0x0002, r1
+stor 	r2,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r3,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r4,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r5,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r6,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r7,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r8,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r9,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r10,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r11,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r12,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r13,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r14,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+mov 	r0,r2		# 0x0000, 0x0000
+mov 	r1,r3		# 0x0000, 0x0000
+pop 	r1		# 0x0000
+pop 	r4		# 0x0000
+pop 	r0		# 0x0000
+stor 	r15,r2		# 0x0000, 0x0000
+add 	r3,r4		# 0x0000, 0x0000
+add 	r3,r4		# 0x0000, 0x0000
+stor 	r0,r4		# 0x0000, 0x0000
+add 	r3,r4		# 0x0000, 0x0000
+stor 	r1,r4		# 0x0000, 0x0000
+call 	0x01fe
+push 	r0		# 0x0000
+call 	0x021c
+pop 	r0		# 0x0000
+call 	0x01f6
+loadi 	0x0022, r1
+add 	r1,r0		# 0x0000, 0x0000
+load 	r0,r15		# 0x0000, 0x0000
+loadi 	0x0002, r1
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r14		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r13		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r12		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r11		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r10		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r9		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r8		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r7		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r6		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r5		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r4		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r3		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r2		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r1		# 0x0000, 0x0000
+dec 	r0		# 0x0000
+dec 	r0		# 0x0000
+load 	r0,r0		# 0x0000, 0x0000
+iret 	
+push 	r14		# 0x0000
+mov 	r15,r14		# 0x0000, 0x0000
+loadi 	0x0658, r15
+push 	r14		# 0x0000
+push 	r1		# 0x0000
+loadi 	0x0006, r1
+add 	r1,r14		# 0x0000, 0x0000
+load 	r14,r0		# 0x0000, 0x0000
+push 	r0		# 0x0000
+call 	0x010e
+pop 	r0		# 0x0000
+pop 	r1		# 0x0000
+pop 	r14		# 0x0000
+mov 	r14,r15		# 0x0000, 0x0000
+pop 	r14		# 0x0000
+iret 	
+iret 	
+push 	r0		# 0x0000
+push 	r1		# 0x0000
+mov 	r15,r1		# 0x0000, 0x0000
+loadi 	0x0006, r0
+add 	r0,r1		# 0x0000, 0x0000
+load 	r1,r0		# 0x0000, 0x0000
+loadb 	r0,r1		# 0x0000, 0x0000
+test 	r1,r1		# 0x0000, 0x0000
+br 	0x0004
+jr 	0x0008
+out 	r1		# 0x0000
+inc 	r0		# 0x0000
+jr 	0x00f4
+loadi 	0x000a, r1
+out 	r1		# 0x0000
+pop 	r1		# 0x0000
+pop 	r0		# 0x0000
+ret 	
+push 	r0		# 0x0000
+push 	r1		# 0x0000
+push 	r2		# 0x0000
+push 	r3		# 0x0000
+push 	r4		# 0x0000
+push 	r5		# 0x0000
+push 	r6		# 0x0000
+push 	r7		# 0x0000
+call 	0x01c4
+loadi 	0x0660, r1
+load 	r1,r2		# 0x0000, 0x0000
+loadi 	0x066a, r3
+stor 	r2,r3		# 0x0000, 0x0000
+mov 	r2,r4		# 0x0000, 0x0000
+loadi 	0x0024, r3
+mov 	r3,r5		# 0x0000, 0x0000
+mul 	r0,r3		# 0x0000, 0x0000
+add 	r3,r2		# 0x0000, 0x0000
+loadi 	0x0668, r3
+stor 	r2,r3		# 0x0000, 0x0000
+mov 	r2,r6		# 0x0000, 0x0000
+loadi 	0x0400, r3
+mov 	r3,r7		# 0x0000, 0x0000
+mul 	r0,r3		# 0x0000, 0x0000
+add 	r3,r2		# 0x0000, 0x0000
+stor 	r2,r1		# 0x0000, 0x0000
+xor 	r1,r1		# 0x0000, 0x0000
+loadi 	0x066c, r2
+add 	r7,r6		# 0x0000, 0x0000
+dec 	r6		# 0x0000
+dec 	r6		# 0x0000
+dec 	r6		# 0x0000
+dec 	r6		# 0x0000
+push 	r4		# 0x0000
+call 	0x021c
+pop 	r4		# 0x0000
+load 	r2,r3		# 0x0000, 0x0000
+stor 	r3,r6		# 0x0000, 0x0000
+inc 	r2		# 0x0000
+inc 	r2		# 0x0000
+inc 	r4		# 0x0000
+inc 	r4		# 0x0000
+stor 	r1,r4		# 0x0000, 0x0000
+loadi 	0x0020, r3
+add 	r3,r4		# 0x0000, 0x0000
+stor 	r6,r4		# 0x0000, 0x0000
+inc 	r4		# 0x0000
+inc 	r4		# 0x0000
+add 	r7,r6		# 0x0000, 0x0000
+inc 	r1		# 0x0000
+equ 	r1,r0		# 0x0000, 0x0000
+br 	0x0004
+jr 	0x00d6
+pop 	r7		# 0x0000
+pop 	r6		# 0x0000
+pop 	r5		# 0x0000
+pop 	r4		# 0x0000
+pop 	r3		# 0x0000
+pop 	r2		# 0x0000
+pop 	r1		# 0x0000
+pop 	r0		# 0x0000
+ret 	
+push 	r1		# 0x0000
+push 	r2		# 0x0000
+push 	r3		# 0x0000
+xor 	r0,r0		# 0x0000, 0x0000
+loadi 	0x0660, r3
+loadi 	0x066c, r1
+inc 	r0		# 0x0000
+stor 	r2,r3		# 0x0000, 0x0000
+load 	r1,r2		# 0x0000, 0x0000
+inc 	r1		# 0x0000
+inc 	r1		# 0x0000
+inc 	r2		# 0x0000
+test 	r2,r2		# 0x0000, 0x0000
+br 	0x00f2
+dec 	r0		# 0x0000
+dec 	r0		# 0x0000
+loadi 	0x0662, r3
+stor 	r0,r3		# 0x0000, 0x0000
+pop 	r3		# 0x0000
+pop 	r2		# 0x0000
+pop 	r1		# 0x0000
+ret 	
+loadi 	0x0664, r0
+load 	r0,r0		# 0x0000, 0x0000
+ret 	
+push 	r1		# 0x0000
+loadi 	0x0664, r1
+load 	r1,r0		# 0x0000, 0x0000
+push 	r0		# 0x0000
+load 	r0,r0		# 0x0000, 0x0000
+stor 	r0,r1		# 0x0000, 0x0000
+test 	r0,r0		# 0x0000, 0x0000
+br 	0x0008
+loadi 	0x0666, r1
+stor 	r0,r1		# 0x0000, 0x0000
+pop 	r0		# 0x0000
+pop 	r1		# 0x0000
+ret 	
+push 	r0		# 0x0000
+push 	r1		# 0x0000
+mov 	r15,r0		# 0x0000, 0x0000
+loadi 	0x0006, r1
+add 	r1,r0		# 0x0000, 0x0000
+load 	r0,r0		# 0x0000, 0x0000
+xor 	r1,r1		# 0x0000, 0x0000
+stor 	r1,r0		# 0x0000, 0x0000
+push 	r0		# 0x0000
+loadi 	0x0666, r1
+load 	r1,r0		# 0x0000, 0x0000
+test 	r0,r0		# 0x0000, 0x0000
+pop 	r0		# 0x0000
+br 	0x000e
+push 	r1		# 0x0000
+loadi 	0x0664, r1
+stor 	r0,r1		# 0x0000, 0x0000
+pop 	r1		# 0x0000
+jr 	0x000a
+push 	r1		# 0x0000
+load 	r1,r1		# 0x0000, 0x0000
+stor 	r0,r1		# 0x0000, 0x0000
+pop 	r1		# 0x0000
+stor 	r0,r1		# 0x0000, 0x0000
+pop 	r1		# 0x0000
+pop 	r0		# 0x0000
+ret 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+cli 	
+(null) 	
+(null) 	0x0000, r1
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	r1,r0		# 0x0000, 0x0000
+(null) 	
+equ 	r1,r0		# 0x0000, 0x0000
+(null) 	
+(null) 	r1,r0		# 0x0000, 0x0000
+(null) 	
+test 	r1,r0		# 0x0000, 0x0000
+(null) 	
+(null) 	0x0001, r1
+inc 	r1		# 0x0000
+(null) 	
+(null) 	r1		# 0x0000
+(null) 	
+(null) 	0x0001
+(null) 	r1		# 0x0000
+(null) 	
+(null) 	0x0010
+(null) 	
+(null) 	0x0010
+(null) 	
+(null) 	0x0001
+(null) 	0x0001, r1
+(null) 	0x0002, r1
+cld 	
+(null) 	
+(null) 	r1		# 0x0000
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	
+(null) 	0x066c, r0
+ret 	
+ret 	r14		# 0x0000
+ret 	0x0000, r0
