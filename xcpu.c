@@ -17,15 +17,20 @@
 
 // a handy macro for fetching word-sized chunks of data from memory
 #define FETCH_WORD(ptr) \
-     (((unsigned short int) (c->memory[(ptr) % 0x1000] << 8)) & 0xFF00)\
-     |(((unsigned short int) (c->memory[((ptr)+1) % 0x1000])) & 0x00FF)
+     (((unsigned short int) (c->memory[(ptr) % MEMSIZE] << 8)) & 0xFF00)\
+     |(((unsigned short int) (c->memory[((ptr)+1) % MEMSIZE])) & 0x00FF)
 // to replace deprecated fetch_word function, and save a bit of runtime.
 
 // a helper macro for the various push-style instructions
 #define PUSHER(word)\
   c->regs[15] -= 2;\
-  c->memory[c->regs[15] % 0x10000] = (unsigned char) (word >> 8); \
-  c->memory[(c->regs[15] + 1) % 0x10000] = (unsigned char) (word & 0xFF)
+  c->memory[c->regs[15] % MEMSIZE] = (unsigned char) (word >> 8); \
+  c->memory[(c->regs[15] + 1) % MEMSIZE] = (unsigned char) (word & 0xFF)
+
+#define POPPER(dest) \
+  dest = FETCH_WORD(c->regs[15]);\
+  c->regs[15] += 2;
+  
 
 /**
  * MOREDEBUG turns on a host of helpful debugging features, which I 
@@ -199,7 +204,7 @@ int xcpu_execute(xcpu *c, IHandler *table) {
   opcode = (unsigned char)( (instruction >> 8) & 0x00FF); 
   c->pc += WORD_SIZE;  // extended instructions will increment pc a 2nd time
   (table[opcode])(c, instruction);
-  if (_halt == 1 && (c->state & 0xFFFE))
+  if (_halt == 1 && (c->state & 0x2)) // check
     xcpu_print(c);
   if (MOREDEBUG)
     xcpu_pretty_print(c);
@@ -209,17 +214,18 @@ int xcpu_execute(xcpu *c, IHandler *table) {
 
 /* Not needed for assignment 1 */
 int xcpu_exception( xcpu *c, unsigned int ex ) {
-  int i = ex * WORD_SIZE; // is this right?
-  /* "i should be 0 if the exception is a regular interrupt; i should be
-     2 if the exception is a trap; and i should be 4 if the exception is a
-     fault." ex takes a value from the X_E_* enum defined in xcpu.h
-     remember that WORD_SIZE = 2.
-   */
-  PUSHER(c->state);
-  PUSHER(c->pc);
-  c->state |= X_STATE_IN_EXCEPTION;
-  c->pc = fetch_word(c->memory, c->itr+i); // re: i, see comment above
-
+  if (c->state | ~0x0004){ // IF NOT ALREADY IN INTERRUPT
+    int i = ex * WORD_SIZE; // is this right?
+    /* "i should be 0 if the exception is a regular interrupt; i should be
+       2 if the exception is a trap; and i should be 4 if the exception is a
+       fault." ex takes a value from the X_E_* enum defined in xcpu.h
+       remember that WORD_SIZE = 2.
+    */
+    PUSHER(c->state);
+    PUSHER(c->pc);
+    c->state |= 0x0004;
+    c->pc = fetch_word(c->memory, c->itr+i); // re: i, see comment above
+  }
   return 1; // but returns 0 when not successful. How is this gauged?
 }
 /******************************************************************
@@ -244,8 +250,9 @@ INSTRUCTION(bad){
   _halt = 0; // global flag variable
 }
 INSTRUCTION(ret){
-  c->pc = FETCH_WORD(c->regs[X_STACK_REG]);
-  c->regs[X_STACK_REG] += WORD_SIZE;
+  POPPER(c->pc);
+  /*c->pc = FETCH_WORD(c->regs[X_STACK_REG]);
+    c->regs[X_STACK_REG] += WORD_SIZE;*/
 }
 INSTRUCTION(cld){
   c->state &= 0xfffd;
@@ -384,17 +391,30 @@ INSTRUCTION(loadi){
 }
 /*** INTERRUPT-HANDLING INSTRUCTIONS ***/
 INSTRUCTION(cli){
-    c->state &= 0xFFFB;
+  c->state &= 0xFFFB; // 0xFFFB == ~0x0004
 }
 INSTRUCTION(sti){
-    c->state |= 0x0004;
+  c->state |= 0x0004;
 }
 INSTRUCTION(iret){
+  /////
+  printf(">>>>>>>>>>>>>>>>>>> pre IRET <<<<<<<<<<<<<<<<<<<<<<<<\n");
+
+  printf(">>>>>>> PC = %4.4x  STATE = %4.4x  r15 = %4.4x -> %4.4x <<<<<<<<<<<<\n",c->pc, c->state, c->regs[X_STACK_REG], FETCH_WORD(c->regs[X_STACK_REG]));
+  ///////////////////////////////
+
+  POPPER(c->pc);
+  POPPER(c->state);
+  printf(">>>>>>>>>>>>>>>>>>> post IRET <<<<<<<<<<<<<<<<<<<<<<<<\n");
+
+  printf(">>>>>>> PC = %4.4x  STATE = %4.4x  r15 = %4.4x -> %4.4x <<<<<<<<<<<<\n",c->pc, c->state, c->regs[X_STACK_REG], FETCH_WORD(c->regs[X_STACK_REG]));
+
+}
+/*
+oINSTRUCTION(ret){
   c->pc = FETCH_WORD(c->regs[X_STACK_REG]);
   c->regs[X_STACK_REG] += WORD_SIZE;
-  c->state = FETCH_WORD(c->regs[X_STACK_REG]);
-  c->regs[X_STACK_REG] += WORD_SIZE;
-}
+  }*/
 INSTRUCTION(trap){
   if (!(c->state & 0x0004)){
     xcpu_exception(c, X_E_TRAP); // very confusing.
