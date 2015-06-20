@@ -124,12 +124,12 @@ context_switch:        # context_switch in the next process to run
 
   call 	get_curr_proc        # returns pointer to curr PCB in r0
   loadi 0x22, r1             # 
-  add 	r1, r0		     # PCB.head + 0x22 = addr of stack pointer
+  add 	r1, r0		     # PCB.head + (15*2)+4 = addr of stack pointer
   load 	r0, r15		     # restore stack pointer to state saved in PCB
-  loadi 0x2, r1
-  sub 	r1,r0		
-  load 	r0,r14		
-  sub 	r1,r0		
+  loadi 0x2, r1              # as before, let r1 hold the step-size (2B)
+  sub 	r1,r0		     # now walk backwards through the reg space
+  load 	r0,r14		     # of the PCB, and restore the registers in
+  sub 	r1,r0		     # descending order. 
   load 	r0,r13		
   sub 	r1,r0		
   load 	r0,r12		
@@ -172,7 +172,7 @@ trap_hdlr:             #
                         
   #################################################################
   # Place your code here to implement the trap handler.
-  # Be sure to switch to kernel's stack as part of the before calling any
+  # Be sure to switch tozb kernel's stack as part of the before calling any
   # of the kernel's functions.
   # Note, you do not need to do much because you have kputs() to use.
   # This should take approximately 20 instructions.
@@ -183,15 +183,15 @@ trap_hdlr:             #
   push   r14
   push   r1
   loadi  0x6, r1
-  add    r1, r14  # add 6 to base pointer to access params
+  add    r1, r14            # add 6 to base pointer to access params
   load   r14, r0
   push   r0                 # pass parameter as parameter to kputs
   call   kputs              # print the character passed as param
-  pop    r0                 
-  pop    r1
-  pop    r14
-  mov    r14, r15
-  pop    r14
+  pop    r0                 # clear r0 off the stack
+  pop    r1                 #
+  pop    r14                # clean up the stack
+  mov    r14, r15           # restore stack pointer to prior state
+  pop    r14                # 
   iret              
 
 
@@ -456,9 +456,9 @@ enq_done:
 # pcb_tab      stores the location of the PCB table
 # proc_locs    points to the table of offsets to processes to be loaded
 
-
-ker_stack:
 .words 512
+ker_stack:
+
 
 # this seemed like a mistake. Shouldn't
 # ".words 512" be *beneath* ker_stack?
