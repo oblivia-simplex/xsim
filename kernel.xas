@@ -8,7 +8,7 @@
 #############
   sti                  # disable interrupts by enabling the interrupt bit
 
-  loadi ker_stack, r15 # set up kernel's stack
+  loadi ker_stack, r15 # set up kernel's stack (fixed bug)
 
   loadi int_tab, r0    # set ITR to point to the interrupt table
   lit r0               # 
@@ -45,15 +45,25 @@ int_hdlr:              # interrupt handler
   # Becareful not to corrupt any of the registers. 
   # This should take approximately 40 - 50 instructions.
   #################################################################
-  push   r0
-  call   get_curr_proc   # loads address of head of queue into r0
-  push   r0
-  push   r1
-  loadi  0x8, r1        # now, we just need to walk down the stretch
-  add    r1,  r0        # of memory in the PCB, one word at a time,
-  loadi  0x2, r1        # and write the contents of the registers to 
-  stor 	 r2, r0         # memory there. 
-  add 	 r1, r0
+# What's we're going to be doing here is this: we need to walk down the
+# stretch of memory in the PCB, word by word, and write the contents of
+# the registers to those words. But to do this, we need to make use of
+# a few of our registers. So we first push the contents of those
+# registers onto the stack, and skip ahead four words into the PCB. We
+# will come back to these four words later, to store (1) a ptr to the
+# next PCB, (2) the PID of this process, (3) r0, (4) r1. Finally, we'll
+# need to clean up our stack and restore r15 to its intial value, and then
+# store r15, the stack pointer, to the PC
+# ---------------------------------------------------------------------- 
+  push   r0             # save r0
+  call   get_curr_proc  # loads address of head of PCB into r0
+  push   r0             # push address of PCB head onto stack
+  push   r1             # save r1
+  loadi  0x8, r1        # Four words: the stretch we'll skip for now. 
+  add    r1,  r0        # 
+  loadi  0x2, r1        # We'll want to step 1 word at a time. r1 stores
+  stor 	 r2, r0         # the step-size. 
+  add 	 r1, r0         
   stor 	 r3, r0
   add 	 r1, r0		
   stor 	 r4, r0		
@@ -76,21 +86,21 @@ int_hdlr:              # interrupt handler
   add 	 r1, r0		
   stor 	 r13,r0		
   add 	 r1, r0		
-  stor 	 r14,r0		
-  add 	 r1, r0		
-  mov 	 r0, r2		
-  mov 	 r1, r3		
-  pop 	 r1		
-  pop 	 r4		
-  pop 	 r0
+  stor 	 r14,r0	     # we still need to store r0 and r15, so let's restore
+  add 	 r1, r0	     # their original values. redelegate their roles... 
+  mov 	 r0, r2	     # make r2 the new PCB pointer, to free up r0
+  mov 	 r1, r3      # make r3 the new word counter (r3 <- 2 bytes)
+  pop 	 r1	     # restore old r1	
+  pop 	 r4	     # pop address of PCB head into r4
+  pop 	 r0          # restore old r0
+  stor 	 r15,r2      # store the stack pointer in the PCB, right after r14
+  add 	 r3,r4	     # increment address of PCB head by one word	
+  add 	 r3,r4	     # increment address of PCB head by another word
+  stor 	 r0,r4	     # store r0 in its slot, at PCB+4
+  add 	 r3,r4	     # take another step down the PCB
+  stor 	 r1,r4       # store r1 here.
   
- # stor 	 r15,r2		???????????
- # add 	 r3,r4		
- # add 	 r3,r4		
- # stor 	 r0,r4		
- # add 	 r3,r4		
- # stor 	 r1,r4           
-
+# We leave the NEXT pointer unchanged. PID seems to play no role just yet. 
 
   #################################################################
   # Place your code here to move the current process to the end of
@@ -102,7 +112,7 @@ context_switch:        # context_switch in the next process to run
   call 	dequeue_proc
   push 	r0	       # r0 will contain pointer to PCB of deq'd proc
   call 	enqueue_proc   # by passing this pointer as a param to enq, 
-  pop 	r0	       # we move it to the back of the Q. pop r0 to clean stack	
+  pop 	r0	       # we move it to back of Q. pop r0 to clean stack	
 
 
   #################################################################
@@ -112,11 +122,11 @@ context_switch:        # context_switch in the next process to run
   # This should take approximately 40 - 50 instructions.
   #################################################################
 
-  call 	get_curr_proc
-  loadi 0x0022, r1      
-  add 	r1,r0		
-  load 	r0,r15		
-  loadi 0x0002, r1
+  call 	get_curr_proc        # returns pointer to curr PCB in r0
+  loadi 0x22, r1             # 
+  add 	r1, r0		     # PCB.head + 0x22 = addr of stack pointer
+  load 	r0, r15		     # restore stack pointer to state saved in PCB
+  loadi 0x2, r1
   sub 	r1,r0		
   load 	r0,r14		
   sub 	r1,r0		
@@ -446,9 +456,15 @@ enq_done:
 # pcb_tab      stores the location of the PCB table
 # proc_locs    points to the table of offsets to processes to be loaded
 
-.words 512
-ker_stack:
 
+ker_stack:
+.words 512
+
+# this seemed like a mistake. Shouldn't
+# ".words 512" be *beneath* ker_stack?
+# (originally, ker_stack label was *below*
+# ".words 512", and this is how it was
+# compiled). 
 int_tab:
   .words 4
 
