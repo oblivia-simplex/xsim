@@ -9,13 +9,18 @@ char ** build_disas_table(void);
 void xcpu_pretty_print(xcpu *c);
 
 
+/************************************************************************
+ * Returns ASCII character, if parameter is within printable range, and otherwise
+ * returns '.'.
+ ************************************************************************/
 char prchar(char c){
   return ('A' <= c && c <= 'z')? c : '.';
 }
 
-
-
-
+/************************************************************************
+ * Takes pointer to CPU context as parameter, and prints disassembly of
+ * instruction at PC, as side effect, to LOG (stderr by default). 
+ ************************************************************************/
 void disas(xcpu *c){
   unsigned short int instruction;
   instruction = FETCH_WORD(c->pc);
