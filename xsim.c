@@ -23,7 +23,6 @@ int main(int argc, char *argv[]){
   init_cpu(c);
   load_programme(c, fd); // loads the bytes of fd into c->memory
 
-
   // the IHandler type is defined in xcpu.h, and the IHandler jump table
   // is implemented in xcpu.c // instruction handler, not interrupt handler.
   // consider renaming to avoid confusion!
@@ -36,7 +35,7 @@ int main(int argc, char *argv[]){
   int halted, i=0;
   while (i++ < cycles || !cycles){
     if (MOREDEBUG) fprintf(LOG, "<CYCLE %d>\n",i-1);
-    if (i != 0 && i % interrupt_freq == 0)
+    if (i != 0 && interrupt_freq != 0 && i % interrupt_freq == 0)
           xcpu_exception(c, X_E_INTR); // where does exception var come from?
     if (halted = !xcpu_execute(c, table)) break; 
   } // on halt, halted gets 0; otherwise halted remains 1

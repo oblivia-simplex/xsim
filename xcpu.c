@@ -13,24 +13,37 @@
 #define WORD_SIZE 2    // word size in bytes
 #define BYTE 8         // byte size in bits
 #define MEMSIZE 0x10000
-
+#define LOG stderr
 
 // a handy macro for fetching word-sized chunks of data from memory
-#define FETCH_WORD(ptr) \
-     (((unsigned short int) (c->memory[(ptr) % MEMSIZE] << 8)) & 0xFF00)\
-     |(((unsigned short int) (c->memory[((ptr)+1) % MEMSIZE])) & 0x00FF)
+#define FETCH_WORD(ptr)                                                 \
+  (((unsigned short int) (c->memory[(ptr) % MEMSIZE] << 8)) & 0xFF00)   \
+  |(((unsigned short int) (c->memory[((ptr)+1) % MEMSIZE])) & 0x00FF)
 // to replace deprecated fetch_word function, and save a bit of runtime.
 
 // a helper macro for the various push-style instructions
-#define PUSHER(word)\
-  c->regs[15] -= 2;\
-  c->memory[c->regs[15] % MEMSIZE] = (unsigned char) (word >> 8); \
+#define PUSHER(word)                                                    \
+  c->regs[15] -= 2;                                                     \
+  c->memory[c->regs[15] % MEMSIZE] = (unsigned char) (word >> 8);       \
   c->memory[(c->regs[15] + 1) % MEMSIZE] = (unsigned char) (word & 0xFF)
 
-#define POPPER(dest) \
-  dest = FETCH_WORD(c->regs[15]);\
+#define POPPER(dest)                            \
+  dest = FETCH_WORD(c->regs[15]);               \
   c->regs[15] += 2;
-  
+
+
+#define LOCK(lockname) \
+  static pthread_mutex_t lockname = PTHREAD_MUTEX_INITIALIZER; \
+  if (pthread_mutex_lock(&(lockname))){ \
+    fprintf(LOG, "-=-= FAILURE TO ACQUIRE LOCK! =-=-\n"); \
+    abort();\
+  } 
+
+#define UNLOCK(lockname) \
+  if (pthread_mutex_unlock(&(lockname))){ \
+    fprintf(LOG, "-=-= FAILURE TO RELEASE LOCK! =-=-\n"); \
+    abort(); \
+  } 
 
 /**
  * MOREDEBUG turns on a host of helpful debugging features, which I 
@@ -52,9 +65,9 @@
  * being developed for experimentation rather than for speed, however, 
  * it seems advisable to leave the MOREDEBUG features intact.  
  **/
-#define MOREDEBUG 1
+#define MOREDEBUG 0
 
-#define LOG stderr
+
 /** halt flag **/
 int _halt = 1; // set to 0 when BAD instruction encountered.
 
@@ -79,7 +92,7 @@ void fatal(char* errmsg);
  * for calling the functions. 
  **/
 #define INSTRUCTION(x) void x(xcpu *c, unsigned short int instruction)
-
+// instructions added in Assignment 1 (base set)
 INSTRUCTION(bad);      INSTRUCTION(ret);      INSTRUCTION(cld);
 INSTRUCTION(std);      INSTRUCTION(neg);      INSTRUCTION(not);
 INSTRUCTION(push);     INSTRUCTION(pop);      INSTRUCTION(jmpr);
@@ -92,9 +105,12 @@ INSTRUCTION(test);     INSTRUCTION(cmp);      INSTRUCTION(equ);
 INSTRUCTION(mov);      INSTRUCTION(load);     INSTRUCTION(stor);
 INSTRUCTION(loadb);    INSTRUCTION(storb);    INSTRUCTION(jmp);
 INSTRUCTION(call);     INSTRUCTION(loadi);
-
+// instructions added in Assignment 2 (interrupt handling)
 INSTRUCTION(cli);      INSTRUCTION(sti);      INSTRUCTION(iret);
 INSTRUCTION(trap);     INSTRUCTION(lit);
+// instructions added in Assignment 3 (threading)
+INSTRUCTION(cpuid);    INSTRUCTION(cpunum);   INSTRUCTION(loada);
+INSTRUCTION(stora);    INSTRUCTION(tnset);
 
 /**************************************************************************
    Gracefully terminate the programme on unrecoverable error.
@@ -134,9 +150,12 @@ void* build_jump_table(void){
   table[I_LOAD] = load;    table[I_STOR]  = stor;    table[I_LOADB] = loadb;
   table[I_STORB]= storb;   table[I_JMP]   = jmp;     table[I_CALL]  = call;
   table[I_LOADI]= loadi;   table[I_CLD]   = cld;
-  // New instructions for handling interrupts (must be implemented):
+  // Instructions for handling interrupts (added in Assignment 2)
   table[I_CLI]  = cli;     table[I_STI]   = sti;     table[I_IRET]  = iret;
   table[I_TRAP] = trap;    table[I_LIT]   = lit;
+  // Instructions for handling threading (added in Assignment 3)
+  table[I_CPUID] = cpuid;  table[I_CPUNUM]= cpunum;  table[I_LOADA] = loada;
+  table[I_TNSET] = tnset;
   return table;
 }
 /*************************************************
@@ -155,9 +174,19 @@ void xcpu_print( xcpu *c ) {
   unsigned int op1;
   int op2;
 
-  fprintf( stdout, "PC: %4.4x, State: %4.4x: Registers:\n", c->pc, c->state );
+  static pthread_mutex_t lk = PTHREAD_MUTEX_INITIALIZER;
+  if (pthread_mutex_lock(&lk)){
+    printf("Failure to acquire lock!");
+    abort();
+  }
+
+  fprintf( stdout, "%2.2d> PC: %4.4x, State: %4.4x\n" , c->id, c->pc, c->state );
+  fprintf( stdout, "%2.2d> Registers: ", c->id );
   for( i = 0; i < X_MAX_REGS; i++ ) {
-    fprintf( stdout, " %4.4x", c->regs[i] );
+    if( !( i % 8 ) ) {
+      fprintf( stdout, "\n%2.2d>     ", c->id );
+    }
+    fprintf( stdout, " r%2.2d:%4.4x", i, c->regs[i] );
   }
   fprintf( stdout, "\n" );
 
@@ -165,7 +194,8 @@ void xcpu_print( xcpu *c ) {
   op2 = c->memory[c->pc + 1];
   for( i = 0; i < I_NUM; i++ ) {
     if( x_instructions[i].code == c->memory[c->pc] ) {
-      fprintf( stdout, "%s ", x_instructions[i].inst );
+      fprintf( stdout, "%2.2d> Instruction: %s ", c->id,
+               x_instructions[i].inst );
       break;
     }
   }
@@ -189,6 +219,11 @@ void xcpu_print( xcpu *c ) {
     break;
   }
   fprintf( stdout, "\n" );
+
+  if( pthread_mutex_unlock( &lk ) ) {
+    printf( "Failure to release lock!" );
+    abort();
+  }
 }
 
 /************************************************************
@@ -214,7 +249,7 @@ int xcpu_execute(xcpu *c, IHandler *table) {
 
 /* Not needed for assignment 1 */
 int xcpu_exception( xcpu *c, unsigned int ex ) {
-  if (c->state | ~0x0004){ // IF NOT ALREADY IN INTERRUPT
+  if (!(c->state & 0x0004)){ // IF NOT ALREADY IN INTERRUPT
     int i = ex * WORD_SIZE; // is this right?
     /* "i should be 0 if the exception is a regular interrupt; i should be
        2 if the exception is a trap; and i should be 4 if the exception is a
@@ -232,7 +267,7 @@ int xcpu_exception( xcpu *c, unsigned int ex ) {
    Constructs a word out of two contiguous bytes in a byte array,
    and returns it. Can be used to fetch instructions, labels, and
    immediate values.
- ******************************************************************/
+******************************************************************/
 unsigned short int fetch_word(unsigned char *mem, unsigned short int ptr){
   unsigned short int word =
     (((unsigned short int) (mem[ptr % MEMSIZE] << 8)) & 0xFF00)
@@ -272,11 +307,12 @@ INSTRUCTION(push){
   PUSHER(c->regs[XIS_REG1(instruction)]);
 }
 INSTRUCTION(pop){
-  c->regs[XIS_REG1(instruction)] = FETCH_WORD(c->regs[X_STACK_REG]);
-  c->regs[X_STACK_REG] += WORD_SIZE;
+  POPPER(c->regs[XIS_REG1(instruction)]);
+  /*  c->regs[XIS_REG1(instruction)] = FETCH_WORD(c->regs[X_STACK_REG]);
+      c->regs[X_STACK_REG] += WORD_SIZE;*/
 }
 INSTRUCTION(jmpr){
-   c->pc = c->regs[XIS_REG1(instruction)];
+  c->pc = c->regs[XIS_REG1(instruction)];
 }
 INSTRUCTION(callr){
   PUSHER(c->pc);
@@ -305,8 +341,8 @@ INSTRUCTION(add){
     c->regs[XIS_REG1(instruction)] + c->regs[XIS_REG2(instruction)];
 }
 INSTRUCTION(sub){
-    c->regs[XIS_REG2(instruction)] =
-      c->regs[XIS_REG2(instruction)] - c->regs[XIS_REG1(instruction)];
+  c->regs[XIS_REG2(instruction)] =
+    c->regs[XIS_REG2(instruction)] - c->regs[XIS_REG1(instruction)];
 }
 INSTRUCTION(mul){
   c->regs[XIS_REG2(instruction)] =
@@ -376,7 +412,7 @@ INSTRUCTION(storb){
  * extended instructions *
  *************************/
 INSTRUCTION(jmp){
-    c->pc = FETCH_WORD(c->pc);
+  c->pc = FETCH_WORD(c->pc);
 }
 INSTRUCTION(call){
   unsigned short int label = FETCH_WORD(c->pc);
@@ -397,24 +433,9 @@ INSTRUCTION(sti){
   c->state |= 0x0004;
 }
 INSTRUCTION(iret){
-  /////
-  printf(">>>>>>>>>>>>>>>>>>> pre IRET <<<<<<<<<<<<<<<<<<<<<<<<\n");
-
-  printf(">>>>>>> PC = %4.4x  STATE = %4.4x  r15 = %4.4x -> %4.4x <<<<<<<<<<<<\n",c->pc, c->state, c->regs[X_STACK_REG], FETCH_WORD(c->regs[X_STACK_REG]));
-  ///////////////////////////////
-
   POPPER(c->pc);
   POPPER(c->state);
-  printf(">>>>>>>>>>>>>>>>>>> post IRET <<<<<<<<<<<<<<<<<<<<<<<<\n");
-
-  printf(">>>>>>> PC = %4.4x  STATE = %4.4x  r15 = %4.4x -> %4.4x <<<<<<<<<<<<\n",c->pc, c->state, c->regs[X_STACK_REG], FETCH_WORD(c->regs[X_STACK_REG]));
-
 }
-/*
-oINSTRUCTION(ret){
-  c->pc = FETCH_WORD(c->regs[X_STACK_REG]);
-  c->regs[X_STACK_REG] += WORD_SIZE;
-  }*/
 INSTRUCTION(trap){
   if (!(c->state & 0x0004)){
     xcpu_exception(c, X_E_TRAP); // very confusing.
@@ -425,9 +446,35 @@ INSTRUCTION(trap){
   }
 }
 INSTRUCTION(lit){
-    c->itr = c->regs[XIS_REG1(instruction)];
+  c->itr = c->regs[XIS_REG1(instruction)];
 }
-  
+/*** THREADING INSTRUCTIONS ***/
+INSTRUCTION(cpuid){
+  c->regs[XIS_REG1(instruction)] = c->id;
+}
+INSTRUCTION(cpunum){
+  c->regs[XIS_REG1(instruction)] = c->num;
+}
+INSTRUCTION(loada){
+  LOCK(lk);
+  c->regs[XIS_REG2(instruction)] = FETCH_WORD(c->regs[XIS_REG1(instruction)]);
+  UNLOCK(lk);
+}
+INSTRUCTION(stora){
+  LOCK(lk);
+  c->memory[c->regs[XIS_REG2(instruction)] % MEMSIZE] =
+    (unsigned char) ((c->regs[XIS_REG1(instruction)] >> 8));
+  c->memory[(c->regs[XIS_REG2(instruction)]+1) % MEMSIZE] =
+    (unsigned char) ((c->regs[XIS_REG1(instruction)]) & 0xFF);  
+  UNLOCK(lk);
+}
+INSTRUCTION(tnset){
+  LOCK(lk);
+  c->regs[XIS_REG2(instruction)] = FETCH_WORD(c->regs[XIS_REG1(instruction)]);
+  c->memory[c->regs[XIS_REG2(instruction)] % MEMSIZE] = 0;
+  c->memory[(c->regs[XIS_REG2(instruction)]+1) % MEMSIZE] = 1;
+  UNLOCK(lk);
+}
 
 /** That's all, folks! **/
 unsigned char *sign="\xde\xba\x5e\x12";

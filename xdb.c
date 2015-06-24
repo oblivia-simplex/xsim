@@ -46,8 +46,8 @@ void disas(xcpu *c){
   switch (XIS_NUM_OPS(opcode)){
   case 0:
     break;
-  case 1:
-    if (instruction & XIS_1_IMED)
+  case 1: // opcode or instruction here?
+    if (opcode & XIS_1_IMED)
       sprintf(operand, "0x%4.4x", (instruction & 0xFF)); // save as string
     else
       sprintf(operand, "r%d\t\t# 0x%4.4x", XIS_REG1(instruction),
@@ -91,16 +91,25 @@ void xdumper(xcpu *c){
  * stdout, for purposes of comparison with xsim_gold.
  *****************************************************************************/
 void xcpu_pretty_print(xcpu *c){
+  static pthread_mutex_t lk = PTHREAD_MUTEX_INITIALIZER;
+  
+  if( pthread_mutex_lock( &lk ) ) {
+    fprintf(LOG, "*** Failure to acquire lock! ***\n" );
+    abort();
+  }
+
+
   int i;
   char * cnd = "CONDITION ";
   char * dbg = "DEBUG ";
+  char * intr = "INTERRUPT ";
   char flags[17] = "";
 
   if (c->state & 0x0001) strcat(flags,cnd);
   if (c->state & 0xFFFE) strcat(flags,dbg); // a bit redundant...
-                                
-  fprintf(LOG, "PC: %4.4x, State: %4.4x ( Flags: %s)"
-          "\n-------=oO( REGISTERS )Oo=-----------------------------------------------------\n", c->pc, c->state, flags );
+  if (c->state & 0x0004) strcat(flags,intr);                              
+  fprintf(LOG, "CPU: %2.2d | PC: %4.4x | State: %4.4x | ITR: %4.4x \nFlags: %s)"
+          "\n-------=oO( REGISTERS )Oo=-----------------------------------------------------\n", c->id, c->pc, c->state, c->itr, flags );
   for( i = 0; i < X_MAX_REGS; i++ ) {
     fprintf(LOG, "%4.4x", c->regs[i] );
     if (i < X_MAX_REGS-1) fprintf(LOG," ");
@@ -139,4 +148,9 @@ void xcpu_pretty_print(xcpu *c){
   fprintf(LOG,"*******************************************************************************\n");
   fprintf(LOG,"NEXT: "); disas(c);
   fprintf(LOG,"*******************************************************************************\n");
+
+  if( pthread_mutex_unlock( &lk ) ) {
+    fprintf(LOG, "*** Failure to release lock! ***\n" );
+    abort();
+  }
 }

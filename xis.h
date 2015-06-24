@@ -18,7 +18,7 @@
 #define XIS_REL_SIZE 8        /* number of bits in a relative address */
 #define XIS_ABS_SIZE 16       /* number of bits in an absolute address */
 
-#define I_NUM 42              /* number of opcodes */
+#define I_NUM 47              /* number of opcodes */
 
 /* Instruction (opcodes) encodings */
 
@@ -45,6 +45,8 @@ enum {
  I_INC     = 0x48, /* 01  0 01000  */
  I_DEC     = 0x49, /* 01  0 01001  */
  I_LIT     = 0x4A, /* 01  0 01010  */
+ I_CPUID   = 0x4B, /* 01  0 01011  */
+ I_CPUNUM  = 0x4C, /* 01  0 01100  */
 
                    /* OPS I OPNUM   Operations with one immediate operand */
  I_BR      = 0x61, /* 01  1 00001  */
@@ -70,6 +72,9 @@ enum {
  I_STOR    = 0x8F, /*  10  001111  */
  I_LOADB   = 0x90, /*  10  010000  */
  I_STORB   = 0x91, /*  10  010001  */
+ I_LOADA   = 0x92, /*  10  010010  */
+ I_STORA   = 0x93, /*  10  010011  */
+ I_TNSET   = 0x94, /*  10  010100  */
 
                    /* OPS  R OPNUM   X Operations with one immediate operand */
  I_JMP     = 0xC1, /*  11  0 00001 */
@@ -109,6 +114,8 @@ static struct x_inst x_instructions[I_NUM] = {
  { "inc", I_INC },
  { "dec", I_DEC },
  { "lit", I_LIT },
+ { "cpuid", I_CPUID },
+ { "cpunum", I_CPUNUM },
 
  { "br", I_BR },
  { "jr", I_JR },
@@ -132,6 +139,9 @@ static struct x_inst x_instructions[I_NUM] = {
  { "stor", I_STOR },
  { "loadb", I_LOADB },
  { "storb", I_STORB },
+ { "loada", I_LOADA },
+ { "stora", I_STORA },
+ { "tnset", I_TNSET },
 
  { "jmp", I_JMP },
  { "call", I_CALL },
@@ -140,44 +150,6 @@ static struct x_inst x_instructions[I_NUM] = {
 
  { NULL,    0 },
 };
-
-/** Why use a struct that you need to search in O(n) when you can use an 
-    array that you can search in O(1)? **/
-
-
-
-/*
-void init_xinst_arr(void){
-  extern char xinst_arr[0x100][8];
-
-  int p;
-  for (p = 0; p < 0x100; p++){
-    strcpy(xinst_arr[p], "bad");
-  }
-  // tidy up this indentation mess!
-  strcpy(xinst_arr[I_BAD],"bad");   strcpy(xinst_arr[I_RET],"ret");
-  strcpy(xinst_arr[I_STD],"std");   strcpy(xinst_arr[I_NEG], "neg");
-  strcpy(xinst_arr[I_NOT] , "not"); strcpy(xinst_arr[I_PUSH] , "push");
-  strcpy(xinst_arr[I_POP], "pop");  strcpy(xinst_arr[I_JMPR] , "jmpr");
-  strcpy(xinst_arr[I_CALLR] , "callr");
-  strcpy(xinst_arr[I_OUT], "out");  strcpy(xinst_arr[I_INC] , "inc");  strcpy(xinst_arr[I_DEC] , "dec");
-  strcpy(xinst_arr[I_BR] , "br");  strcpy(xinst_arr[I_JR] , "jr");  strcpy(xinst_arr[I_ADD] , "add");
-  strcpy(xinst_arr[I_SUB] , "sub");  strcpy(xinst_arr[I_MUL] , "mul");  strcpy(xinst_arr[I_DIV] , "divide");
-  strcpy(xinst_arr[I_AND] , "and");  strcpy(xinst_arr[I_OR] , "or");  strcpy(xinst_arr[I_XOR] , "xor");
-  strcpy(xinst_arr[I_SHR] , "shr");  strcpy(xinst_arr[I_SHL] , "shl");  strcpy(xinst_arr[I_TEST] , "test");
-  strcpy(xinst_arr[I_CMP] , "cmp");  strcpy(xinst_arr[I_EQU] , "equ");  strcpy(xinst_arr[I_MOV] , "mov");
-  strcpy(xinst_arr[I_LOAD] , "load"); strcpy(xinst_arr[I_STOR] , "stor"); strcpy(xinst_arr[I_LOADB] , "loadb");
-  strcpy(xinst_arr[I_STORB], "storb"); strcpy(xinst_arr[I_JMP] , "jmp");  strcpy(xinst_arr[I_CALL] , "call");
-  strcpy(xinst_arr[I_LOADI], "loadi"); strcpy(xinst_arr[I_CLD] , "cld");
-  // New instructions for handling interrupts (must be implemented):
-  strcpy(xinst_arr[I_CLI] , "cli");  strcpy(xinst_arr[I_STI] , "sti");  strcpy(xinst_arr[I_IRET] , "iret");
-  strcpy(xinst_arr[I_TRAP] , "trap"); strcpy(xinst_arr[I_LIT] , "lit");
-
-}
-*/
-
-
-
 #endif
 
 #endif
