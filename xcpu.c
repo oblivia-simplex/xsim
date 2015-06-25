@@ -65,14 +65,14 @@
  * being developed for experimentation rather than for speed, however, 
  * it seems advisable to leave the MOREDEBUG features intact.  
  **/
-#define MOREDEBUG 0
+#define MOREDEBUG 1
 
 
 /** halt flag **/
 int _halt = 1; // set to 0 when BAD instruction encountered.
 
 
-#include "xdb.c"
+
 
 extern void xcpu_pretty_print(xcpu *c);
 void xcpu_print(xcpu *c);
@@ -241,15 +241,14 @@ int xcpu_execute(xcpu *c, IHandler *table) {
   (table[opcode])(c, instruction);
   if (_halt == 1 && (c->state & 0x2)) // check
     xcpu_print(c);
-  if (MOREDEBUG)
-    xcpu_pretty_print(c);
   return _halt;
 }
 
 
-/* Not needed for assignment 1 */
 int xcpu_exception( xcpu *c, unsigned int ex ) {
-  if (!(c->state & 0x0004)){ // IF NOT ALREADY IN INTERRUPT
+  if (c->state & X_STATE_IN_EXCEPTION) {
+    return 1; // return, doing nothing, but report success
+  } else if (c->itr && (ex < X_E_LAST)) { // if itr loaded, and ex valid
     int i = ex * WORD_SIZE; // is this right?
     /* "i should be 0 if the exception is a regular interrupt; i should be
        2 if the exception is a trap; and i should be 4 if the exception is a
@@ -259,9 +258,11 @@ int xcpu_exception( xcpu *c, unsigned int ex ) {
     PUSHER(c->state);
     PUSHER(c->pc);
     c->state |= 0x0004;
-    c->pc = fetch_word(c->memory, c->itr+i); // re: i, see comment above
+    c->pc = FETCH_WORD(c->itr+i); // re: i, see comment above
+    
+    return 1; // but returns 0 when not successful. How is this gauged?
   }
-  return 1; // but returns 0 when not successful. How is this gauged?
+  return 0;
 }
 /******************************************************************
    Constructs a word out of two contiguous bytes in a byte array,
@@ -286,8 +287,6 @@ INSTRUCTION(bad){
 }
 INSTRUCTION(ret){
   POPPER(c->pc);
-  /*c->pc = FETCH_WORD(c->regs[X_STACK_REG]);
-    c->regs[X_STACK_REG] += WORD_SIZE;*/
 }
 INSTRUCTION(cld){
   c->state &= 0xfffd;
@@ -308,8 +307,6 @@ INSTRUCTION(push){
 }
 INSTRUCTION(pop){
   POPPER(c->regs[XIS_REG1(instruction)]);
-  /*  c->regs[XIS_REG1(instruction)] = FETCH_WORD(c->regs[X_STACK_REG]);
-      c->regs[X_STACK_REG] += WORD_SIZE;*/
 }
 INSTRUCTION(jmpr){
   c->pc = c->regs[XIS_REG1(instruction)];
@@ -438,11 +435,7 @@ INSTRUCTION(iret){
 }
 INSTRUCTION(trap){
   if (!(c->state & 0x0004)){
-    xcpu_exception(c, X_E_TRAP); // very confusing.
-    // in xcpu.h, xcpu_exception has the same description given to trap in
-    // the instruction table on the hand-out. Doesn't make sense that the
-    // same instructions are being performed twice in a row, and the
-    // handout ALSO seems to have trap calling xcpu_exception. what a mess.
+    xcpu_exception(c, X_E_TRAP); 
   }
 }
 INSTRUCTION(lit){

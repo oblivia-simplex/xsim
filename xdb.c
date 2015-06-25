@@ -108,7 +108,7 @@ void xcpu_pretty_print(xcpu *c){
   if (c->state & 0x0001) strcat(flags,cnd);
   if (c->state & 0xFFFE) strcat(flags,dbg); // a bit redundant...
   if (c->state & 0x0004) strcat(flags,intr);                              
-  fprintf(LOG, "CPU: %2.2d | PC: %4.4x | State: %4.4x | ITR: %4.4x \nFlags: %s)"
+  fprintf(LOG, "CPU: %2.2d | PC: %4.4x | State: %4.4x | ITR: %4.4x \nFlags: %s"
           "\n-------=oO( REGISTERS )Oo=-----------------------------------------------------\n", c->id, c->pc, c->state, c->itr, flags );
   for( i = 0; i < X_MAX_REGS; i++ ) {
     fprintf(LOG, "%4.4x", c->regs[i] );
