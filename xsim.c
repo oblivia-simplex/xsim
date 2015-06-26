@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
-
+#include <unistd.h>
+#include <pthread.h> // check for multiple def errors
 #include "xcpu.c"
 //#include "xcpu.h"
 #include "xdb.c"
@@ -25,52 +27,158 @@
  * being developed for experimentation rather than for speed, however, 
  * it seems advisable to leave the MOREDEBUG features intact.  
  **/
-#define MOREDEBUG 1
+#define MOREDEBUG 0
 
-
-#define TICK_ARG 1
+#define CYCLE_ARG 1
 #define IMAGE_ARG 2
-#define QUANTUM_ARG 3
+#define INTERRUPT_ARG 3
+#define CPU_ARG 4
+#define EXPECTED_ARGC 5
+
+#define DEFAULT_CPU 1
+#define DEFAULT_INTERRUPT 0
+#define DEFAULT_CYCLES 0
+
+#define HANDLE_ERROR(msg) \
+  perror(msg); \
+  exit(EXIT_FAILURE);
 
 void init_cpu(xcpu *c);
 FILE* load_file(char *filename);
-int load_programme(xcpu *c, FILE *fd);
+int load_programme(unsigned char *mem, FILE *fd);
 void shutdown(xcpu *c);
+static void * execution_loop(void *);
+
+/** build the jump table of instruction-function pointers **/
+IHandler *table;
+/** some global integer variables **/
+int cycles, interrupt_freq, cpu_num;
 
 int main(int argc, char *argv[]){
-  if (argc != 4){
-    printf("Usage: %s <cycles> <filename> <interrupt frequency>\n", argv[0]);
+  
+  // parse command-line options
+  cycles = (argc >= CYCLE_ARG+2)? atoi(argv[CYCLE_ARG]) : DEFAULT_CYCLES;
+  interrupt_freq = (argc >= INTERRUPT_ARG+1)? atoi(argv[INTERRUPT_ARG])
+    : DEFAULT_INTERRUPT;
+  cpu_num = (argc >= CPU_ARG+1)? atoi(argv[CPU_ARG]) : DEFAULT_CPU;
+  if (argc == 1){
+    fprintf(LOG,"Usage: %s <cycles> <filename> <interrupt frequency>"
+            " <number of CPUs>\n",
+            argv[0]);
     exit(EXIT_FAILURE);
+  } else if (argc != EXPECTED_ARGC){
+    char cyc[15];
+    sprintf(cyc, "%d", cycles);
+    fprintf(LOG,"USING SOME DEFAULT SETTINGS:\n\nCYCLES = %s\n",
+            (cycles)? cyc : "unlimited");
+    fprintf(LOG,"INTERRUPT FREQUENCY = %d\nNUMBER OF CPUS = %d\n",
+            interrupt_freq, cpu_num);
+    fprintf(LOG,"\nHit <ENTER> to continue...\n");
+    getchar();
+  }
+  FILE *fd= (argc >= IMAGE_ARG+1)? load_file(argv[IMAGE_ARG]) :
+    load_file(argv[IMAGE_ARG-1]);
+
+  /**** Now, the interesting modification: create cpu_num different cpu
+        contexts, and spin a separate thread to execute each one, in a loop. 
+        You might want a separate function for this. ****/
+
+  table = build_jump_table();
+  xcpu c[cpu_num];
+  unsigned char *mem = calloc(MEMSIZE, sizeof(char));
+  load_programme(mem, fd);
+
+  pthread_t threads[cpu_num];
+  int tsignal;  
+  int u,i;
+  //xcpu *ptr;
+  for (u = 0; u < cpu_num; u++){
+    //ptr = calloc(1,sizeof(xcpu));
+    //c[u] = *ptr;
+    //init_cpu(c[u]);
+    c[u].num = cpu_num;
+    c[u].id = u;
+    c[u].pc = 0;
+    c[u].itr = 0;
+    c[u].state = 0;
+    c[u].memory = mem;
+    for(i=0; i<=15; c[u].regs[i++]=0) // registers will need to be on the stack
+      ;                             // so that each thread can maintain its own
+     
+    ////printf("c[u]->pc: %d %4.4x",&(c[u])->pc,FETCH_WORD(&(c[u])->pc));
+    // now spin the threads...
+    tsignal = pthread_create(&threads[u], NULL, execution_loop,
+                             (void *) (c+u));
+    if (tsignal){
+      fprintf(stderr, "Thread %d not okay. Error signal: %d\n", u, tsignal);
+      exit(EXIT_FAILURE);
+    }
+  } // NB: I think each thread is supposed to SHARE the same memory
+  // right now, they each hold a duplicate. But we'll figure out how to
+  // do this later. 
+  //u = 0;
+  void * end;
+  int join_count = 0;
+  for (u = cpu_num-1; u >= 0; u--){
+    tsignal = pthread_join(threads[u], &end);
+    fprintf(stdout, "Joining thread %d: signal %d\n",u, tsignal);
+    join_count ++;
   }
 
-  // parse command-line options
-  int cycles = atoi(argv[TICK_ARG]);
-  FILE *fd=load_file(argv[IMAGE_ARG]);
-  int interrupt_freq = atoi(argv[QUANTUM_ARG]);
 
+  while (--u >= 0){
+    fprintf(LOG,"\nShutting down CPU %d...\n",c[u].id);
+    //shutdown(&(c[u])); // don't free the memory yet!
+  }
+ 
+ 
+  /* 
+free (&(c[u]));
+  */
   
-  xcpu *c = malloc(sizeof(xcpu));
-  init_cpu(c);
-  load_programme(c, fd); // loads the bytes of fd into c->memory
+  if (join_count == cpu_num){
+    printf("Freeing memory.\n");
+    free(mem);
+    ///for (u = 0; u < cpu_num; u++)
+    ///  free(&(c[u]));
+  } else {
+    printf("join count = %d of %d expected\n",join_count, cpu_num);
+  }
+ 
+  //while(!(tsignal = pthread_join(threads[++u], &end) && u < cpu_num))
+  //  fprintf(LOG, "joining thread %d of %d ==> %x\n", u-1, cpu_num, threads[u-1]);
+  //destroy_jump_table(table);
 
-  // the IHandler type is defined in xcpu.h, and the IHandler jump table
-  // is implemented in xcpu.c // instruction handler, not interrupt handler.
-  // consider renaming to avoid confusion!
-  IHandler *table = build_jump_table();
-  // It is a jump table to the functions handling each instruction.
+  while (--u >= 0){
+    fprintf(LOG,"\nShutting down CPU %d...\n",c[u].id);
+    //shutdown(&(c[u])); // don't free the memory yet!
+  }
+  destroy_jump_table(table);
+  return 0;
+}
 
-  char *graceful    = "CPU has halted.";
-  char *out_of_time = "CPU ran out of time.";
+// more or less works, at least in a rough sense, but segfaults at the end. 
+
+static void * execution_loop(void * cpu){ // expects pointer to an xcpu struct
+  xcpu *c = (xcpu *) cpu;
+  char graceful[40];    
+  char out_of_time[40];
+  sprintf(graceful, "CPU %d has halted.", c->id);
+  sprintf(out_of_time, "CPU %d out of time.", c->id);
   int halted, i=0;
+  fprintf(LOG,"c->pc: %d %4.4x\n",c->pc,FETCH_WORD(c->pc));
+  
   while (i++ < cycles || !cycles){
-    if (MOREDEBUG) fprintf(LOG, "<CYCLE %d>\n",i-1);
+    if (MOREDEBUG) fprintf(LOG, "<CYCLE %d> <CPU %d>\n",i-1,c->id);
     if (i != 0 && interrupt_freq != 0 && i % interrupt_freq == 0)
       if (!xcpu_exception(c, X_E_INTR)){
         fprintf(stderr, "Exception error at 0x%4.4x. CPU has halted.\n",
                 c->pc);
-        exit(EXIT_FAILURE);
+        return NULL;
+        //pthread_exit(NULL);
+        //exit(EXIT_FAILURE);
       }
-    if (halted = !xcpu_execute(c, table)) break;
+    if ((halted = !xcpu_execute(c, table))) break;
     if (MOREDEBUG)
       xcpu_pretty_print(c);
 
@@ -78,10 +186,13 @@ int main(int argc, char *argv[]){
   char *exit_msg = (halted)? graceful : out_of_time;
   fprintf(stdout, "%s\n", exit_msg);
   fprintf(LOG, "(%d cycles completed.)\n", i-1);
-  destroy_jump_table(table);
-  shutdown(c);
-  return !halted;
+  
+  
+  // pthread_exit(NULL);
+  return NULL; //((void *) c);
 }
+
+
 
 FILE* load_file(char* filename){
   FILE *fd;
@@ -97,10 +208,10 @@ FILE* load_file(char* filename){
 /**************************************************************************
    Load a programme into memory, given a file descriptor. 
  **************************************************************************/
-int load_programme(xcpu *c, FILE *fd){
+int load_programme(unsigned char *mem, FILE *fd){
   unsigned int addr = 0;
   do
-    c->memory[addr++] = fgetc(fd);
+    mem[addr++] = fgetc(fd);
   while (!feof(fd) && addr < MEMSIZE);
   if (addr >= MEMSIZE){
     char msg[70]; 
@@ -120,8 +231,6 @@ void init_cpu(xcpu *c){
   c->pc     = 0x0;
   c->state  = 0x0;
   c->itr    = 0x0;
-  c->id     = 0x0;
-  c->num    = 0x1;
 }
 
 void shutdown(xcpu *c){

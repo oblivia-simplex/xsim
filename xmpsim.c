@@ -110,22 +110,17 @@ int main(int argc, char *argv[]){
   pthread_t threads[cpu_num];
   int tsignal;  
   int u,i;
-  //xcpu *ptr;
+
   for (u = 0; u < cpu_num; u++){
-    //ptr = calloc(1,sizeof(xcpu));
-    //c[u] = *ptr;
-    //init_cpu(c[u]);
     c[u].num = cpu_num;
     c[u].id = u;
     c[u].pc = 0;
     c[u].itr = 0;
     c[u].state = 0;
     c[u].memory = mem;
-    for(i=0; i<=15; c[u].regs[i++]=0) // registers will need to be on the stack
-      ;                             // so that each thread can maintain its own
-     
-    ////printf("c[u]->pc: %d %4.4x",&(c[u])->pc,FETCH_WORD(&(c[u])->pc));
-  }
+    for(i=0; i<=15; c[u].regs[i++]=0) 
+      ; 
+    }
   for (u = 0; u < cpu_num; u++){
     // now spin the threads...
     tsignal = pthread_create(&threads[u], NULL, execution_loop,
@@ -134,10 +129,8 @@ int main(int argc, char *argv[]){
       fprintf(stderr, "Thread %d not okay. Error signal: %d\n", u, tsignal);
       exit(EXIT_FAILURE);
     }
-  } // NB: I think each thread is supposed to SHARE the same memory
-  // right now, they each hold a duplicate. But we'll figure out how to
-  // do this later. 
-  //u = 0;
+  }
+  
   void * end;
   int join_count = 0;
   for (u = cpu_num-1; u >= 0; u--){
@@ -146,39 +139,24 @@ int main(int argc, char *argv[]){
     join_count ++;
   }
 
-
   while (--u >= 0){
     fprintf(LOG,"\nShutting down CPU %d...\n",c[u].id);
-    //shutdown(&(c[u])); // don't free the memory yet!
   }
- 
- 
-  /* 
-free (&(c[u]));
-  */
   
   if (join_count == cpu_num){
     printf("Freeing memory.\n");
     free(mem);
-    ///for (u = 0; u < cpu_num; u++)
-    ///  free(&(c[u]));
   } else {
     printf("join count = %d of %d expected\n",join_count, cpu_num);
   }
- 
-  //while(!(tsignal = pthread_join(threads[++u], &end) && u < cpu_num))
-  //  fprintf(LOG, "joining thread %d of %d ==> %x\n", u-1, cpu_num, threads[u-1]);
-  //destroy_jump_table(table);
-
+  
   while (--u >= 0){
     fprintf(LOG,"\nShutting down CPU %d...\n",c[u].id);
-    //shutdown(&(c[u])); // don't free the memory yet!
   }
+  /** Now free the jump table. **/
   destroy_jump_table(table);
   pthread_exit(NULL);
 }
-
-// more or less works, at least in a rough sense, but segfaults at the end. 
 
 static void * execution_loop(void * cpu){ // expects pointer to an xcpu struct
   xcpu *c = (xcpu *) cpu;
@@ -187,10 +165,9 @@ static void * execution_loop(void * cpu){ // expects pointer to an xcpu struct
   sprintf(graceful, "CPU %d has halted", c->id);
   sprintf(out_of_time, "CPU ran %d out of time", c->id);
   int halted, j, i[cpu_num];
+  // let's have each thread keep its own cycle counter.
   for (j=0; j < cpu_num; j++)
     i[j]=0;
-  
-
   
   while (i[c->id]++ < cycles || !cycles){
     if (MOREDEBUG) fprintf(LOG, "<CYCLE %d> <CPU %d>\n",i[c->id]-1,c->id);
@@ -201,8 +178,6 @@ static void * execution_loop(void * cpu){ // expects pointer to an xcpu struct
                 c->pc);
         UNLOCK(elk);
         return NULL;
-        //pthread_exit(NULL);
-        //exit(EXIT_FAILURE);
       }
     LOCK(elk);
     halted = !xcpu_execute(c,table);
@@ -213,18 +188,14 @@ static void * execution_loop(void * cpu){ // expects pointer to an xcpu struct
       xcpu_pretty_print(c);
       UNLOCK(elk);
     }
-
-  } // on halt, halted gets 0; otherwise halted remains 1
+  }
+  
   char *exit_msg = (halted)? graceful : out_of_time;
-  fprintf(stdout, "\n[%s after %d cycles at PC = %4.4x]\n", exit_msg, i[c->id]-1, c->pc);
-  //fprintf(LOG, "(%d cycles completed.)\n", i-1);
-  
-  
-  // pthread_exit(NULL);
-  return NULL; //((void *) c);
+  fprintf(stdout, "\n[%s after %d cycles at PC = %4.4x]\n",
+          exit_msg, i[c->id]-1, c->pc);
+
+  return NULL;
 }
-
-
 
 FILE* load_file(char* filename){
   FILE *fd;
@@ -235,7 +206,6 @@ FILE* load_file(char* filename){
   }
   return fd;
 }
-
 
 /**************************************************************************
    Load a programme into memory, given a file descriptor. 
@@ -253,7 +223,6 @@ int load_programme(unsigned char *mem, FILE *fd){
   }
   return addr;
 }
-
 
 void init_cpu(xcpu *c){
   c->memory = calloc(MEMSIZE, sizeof(unsigned char));
