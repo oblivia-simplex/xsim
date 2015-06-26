@@ -32,47 +32,9 @@
   c->regs[15] += 2;
 
 
-#define LOCK(lockname) \
-  static pthread_mutex_t lockname = PTHREAD_MUTEX_INITIALIZER; \
-  if (pthread_mutex_lock(&(lockname))){ \
-    fprintf(LOG, "-=-= FAILURE TO ACQUIRE LOCK! =-=-\n"); \
-    abort();\
-  } 
-
-#define UNLOCK(lockname) \
-  if (pthread_mutex_unlock(&(lockname))){ \
-    fprintf(LOG, "-=-= FAILURE TO RELEASE LOCK! =-=-\n"); \
-    abort(); \
-  } 
-
-/**
- * MOREDEBUG turns on a host of helpful debugging features, which I 
- * gradually pieced together for my own benefit, in trying to get 
- * this programme to run. Features actived by the MOREDEBUG macro
- * switch are: a pretty and much-improved xcpu_print called 
- * xcpu_pretty_print, on-the-fly natural language disassembly and
- * running commentary on the active instruction in each cycle, and
- * a cycle counter. The default channel for all of this is stderr,
- * leaving stdout unsullied, and still usable for comparing with the
- * output of xsim_gold. To temporarily turn off the MOREDEBUG features,
- * just redirect stderr to /dev/null on the command line. To more 
- * permanently turn it off, just switch it to 0 below and recompile. 
- * For an optimised version of xcpu, I may consider trimming the fat
- * and commenting out all of the MOREDEBUG features, since, taken
- * together, they linearly increase the runtime relative to the number
- * of cycles (since, even when deactived, they mean another if-statement
- * or two to evaluate for every machine instruction). Since this cpu is
- * being developed for experimentation rather than for speed, however, 
- * it seems advisable to leave the MOREDEBUG features intact.  
- **/
-#define MOREDEBUG 1
-
-
 /** halt flag **/
-int _halt = 1; // set to 0 when BAD instruction encountered.
-
-
-
+// int _halt = 1; // set to 0 when BAD instruction encountered.
+// not sure if this global approach to the halt flag is threadsafe!
 
 extern void xcpu_pretty_print(xcpu *c);
 void xcpu_print(xcpu *c);
@@ -239,9 +201,9 @@ int xcpu_execute(xcpu *c, IHandler *table) {
   opcode = (unsigned char)( (instruction >> 8) & 0x00FF); 
   c->pc += WORD_SIZE;  // extended instructions will increment pc a 2nd time
   (table[opcode])(c, instruction);
-  if (_halt == 1 && (c->state & 0x2)) // check
+  if (c->state & 0x2) // check
     xcpu_print(c);
-  return _halt;
+  return (opcode != I_BAD); //_halt;
 }
 
 
@@ -283,7 +245,7 @@ unsigned short int fetch_word(unsigned char *mem, unsigned short int ptr){
  *********************************/
 
 INSTRUCTION(bad){
-  _halt = 0; // global flag variable
+  // do nothing! 
 }
 INSTRUCTION(ret){
   POPPER(c->pc);
@@ -470,4 +432,4 @@ INSTRUCTION(tnset){
 }
 
 /** That's all, folks! **/
-unsigned char *sign="\xde\xba\x5e\x12";
+char *sign="\xde\xba\x5e\x12";

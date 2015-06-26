@@ -26,7 +26,7 @@ void disas(xcpu *c){
   instruction = FETCH_WORD(c->pc);
 
   unsigned char opcode = (unsigned char)( (instruction >> 8) & 0x00FF);
-  char *reg1, *reg1_val, *reg2, *reg2_val, *label, *numval; // tidy up
+  //char *reg1, *reg1_val, *reg2, *reg2_val, *label, *numval; // tidy up
   char istring[80] = "";
   char operand[80] = "";
   char mnemonic[8];
@@ -108,8 +108,8 @@ void xcpu_pretty_print(xcpu *c){
   if (c->state & 0x0001) strcat(flags,cnd);
   if (c->state & 0xFFFE) strcat(flags,dbg); // a bit redundant...
   if (c->state & 0x0004) strcat(flags,intr);                              
-  fprintf(LOG, "CPU: %2.2d | PC: %4.4x | State: %4.4x | ITR: %4.4x \nFlags: %s"
-          "\n-------=oO( REGISTERS )Oo=-----------------------------------------------------\n", c->id, c->pc, c->state, c->itr, flags );
+  fprintf(LOG, "CPU: %2.2d of %2.2d | PC: %4.4x | State: %4.4x | ITR: %4.4x \nFlags: %s"
+          "\n-------=oO( REGISTERS )Oo=-----------------------------------------------------\n", c->id, c->num, c->pc, c->state, c->itr, flags );
   for( i = 0; i < X_MAX_REGS; i++ ) {
     fprintf(LOG, "%4.4x", c->regs[i] );
     if (i < X_MAX_REGS-1) fprintf(LOG," ");
@@ -121,14 +121,14 @@ void xcpu_pretty_print(xcpu *c){
             (c->regs[X_STACK_REG]+i) % MEMSIZE,
             c->memory[(c->regs[X_STACK_REG]+i) % MEMSIZE],
             c->memory[(c->regs[X_STACK_REG]+i+1) % MEMSIZE]);
-    if ((i+2)% 0xA ==0 | i == 0x1f) fprintf(LOG, "\n");
+    if ((i+2)% 0xA ==0 || i == 0x1f) fprintf(LOG, "\n");
   }
   for( i = 0; i < 0x1e; i+=2){
     fprintf(LOG, "%4.4x: %c %c | ",
             (c->regs[X_STACK_REG]+i) % MEMSIZE,
             prchar(c->memory[(c->regs[X_STACK_REG]+i) % MEMSIZE]),
             prchar(c->memory[(c->regs[X_STACK_REG]+i+1) % MEMSIZE]));
-    if ((i+2)% 0xA ==0 | i == 0x1f) fprintf(LOG, "\n");
+    if ((i+2)% 0xA ==0 || i == 0x1f) fprintf(LOG, "\n");
   }
   fprintf(LOG,"-------=oO( CODE )Oo=----------------------------------------------------------\n");
   for(i=0; i < 0x1e; i+=2){
@@ -136,14 +136,14 @@ void xcpu_pretty_print(xcpu *c){
             c->pc+i,
             c->memory[(c->pc+i) % MEMSIZE],
             c->memory[(c->pc+i+1) % MEMSIZE]);
-    if ((i+2)% 0xA ==0 | i == 0x1f) fprintf(LOG, "\n");
+    if ((i+2)% 0xA ==0 || i == 0x1f) fprintf(LOG, "\n");
   }
   for(i=0; i < 0x1e; i+=2){
     fprintf(LOG, "%4.4x: %c %c | ",
             c->pc+i,
             prchar(c->memory[(c->pc+i) % MEMSIZE]),
             prchar(c->memory[(c->pc+i+1) % MEMSIZE]));
-    if ((i+2)% 0xA ==0 | i == 0x1f) fprintf(LOG, "\n");
+    if ((i+2)% 0xA ==0 || i == 0x1f) fprintf(LOG, "\n");
   }
   fprintf(LOG,"*******************************************************************************\n");
   fprintf(LOG,"NEXT: "); disas(c);
