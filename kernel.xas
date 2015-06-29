@@ -1,34 +1,63 @@
 ###############################################################################
 # kernel initialization
-# 0. disable interrupts
+# 0. disable interrupts 
 # 1. set up interrupt table
-# 2. initialize interrupt table with handlers 
-# 3. set cur_proc to point to initial process
-# 4. jump to context_switcher
+# 2. initialize interrupt table with handlers
+# 3a. if not CPU 0 wait until CPU initializes the kernel
+# 3b. if CPU 0, initialize processes, stacks and tables
+# 4. Each CPU creates its own stack.
+# 5. Jump to context_switcher
 #############
-  sti                  # disable interrupts by enabling the interrupt bit
+  sti                  # set IN_INTERRUPT flag (disable interrupts)
 
-  loadi ker_stack, r15 # set up kernel's stack (fixed bug)
+  loadi tmp_stack, r15 # setup temporary stack for the kernel
 
-  loadi int_tab, r0    # set ITR to point to the interrupt table
-  lit r0               # 
+  loadi int_tab, r0    # load location of interrupt table
+  lit r0               # set it into interrupt table register
 
-  loadi int_hdlr, r1   # set up the interrupt handler 
+  cpuid r1             # check if you are the primary cpu (0) or not.
+  test r1, r1
+  br wait_for_init     # if not primary wait for kernel initialization
+                       
+  loadi int_hdlr, r1   # set the interrupt handler
   stor  r1, r0         # 
 
-  inc r0               # set up the trap handler
+  inc r0               # set the trap handler
   inc r0               #
   loadi trap_hdlr, r1  # 
   stor  r1, r0         # 
 
-  inc r0               # set up the fault handler
+  inc r0               # set the fault handler
   inc r0               #
   loadi flt_hdlr, r1   # 
   stor  r1, r0         # 
 
-  call setup_procs     # initialize all processes
+  call setup_procs     # set up PCBs for processes
 
-  jr context_switch    # context switch in the first process
+  loadi init_flag, r0  # set init flag to be done
+  loadi 1, r1          #
+  stor  r1, r0         #
+  jr finish_init       # proceed to finish kernel initialization
+
+wait_for_init:         # wait until kernel init is complete
+  loadi init_flag, r0  # load location of init flag
+wait_loop_1:
+  loada r0, r2         # grap init_flag value
+  equ  r1, r2          # test if it is this CPU's turn
+  br finish_init       # if so, finish initialization
+  jr wait_loop_1       # else wait
+
+finish_init:
+  call setup_ker_stack # set up my kernel stack for this CPU
+  mov  r0, r15         # switch to new stack
+  cpuid r0             # incremement init_flag to next cpu
+  inc  r0              #
+  loadi init_flag, r1  # load location of flag
+  stora r0, r1         # store incremenent in init flag
+
+  call select_next_proc # grab the next process to run
+  
+  jmp context_switch   # context switch in the next process
 
 
 ###############################################################################
@@ -39,125 +68,102 @@
 # 3 context switch process in (including switch back to process' stack)
 #############
 int_hdlr:              # interrupt handler 
-  #################################################################
-  # Place your code here to context switch out the current process.
-  # Use get_curr_proc() to get access to current proc's PCB.
-  # Becareful not to corrupt any of the registers. 
-  # This should take approximately 40 - 50 instructions.
-  #################################################################
-# What's we're going to be doing here is this: we need to walk down the
-# stretch of memory in the PCB, word by word, and write the contents of
-# the registers to those words. But to do this, we need to make use of
-# a few of our registers. So we first push the contents of those
-# registers onto the stack, and skip ahead four words into the PCB. We
-# will come back to these four words later, to store (1) a ptr to the
-# next PCB, (2) the PID of this process, (3) r0, (4) r1. Finally, we'll
-# need to clean up our stack and restore r15 to its intial value, and then
-# store r15, the stack pointer, to the PC
-# ---------------------------------------------------------------------- 
-  push   r0             # save r0
-  call   get_curr_proc  # loads address of head of PCB into r0
-  push   r0             # push address of PCB head onto stack
-  push   r1             # save r1
-  loadi  0x8, r1        # Four words: the stretch we'll skip for now. 
-  add    r1,  r0        # 
-  loadi  0x2, r1        # We'll want to step 1 word at a time. r1 stores
-  stor 	 r2, r0         # the step-size. 
-  add 	 r1, r0         
-  stor 	 r3, r0
-  add 	 r1, r0		
-  stor 	 r4, r0		
-  add 	 r1, r0
-  stor 	 r5, r0
-  add 	 r1, r0
-  stor 	 r6, r0
-  add 	 r1, r0
-  stor 	 r7, r0
-  add 	 r1, r0
-  stor 	 r8, r0
-  add 	 r1, r0
-  stor 	 r9, r0
-  add  	 r1, r0
-  stor   r10,r0
-  add 	 r1, r0
-  stor 	 r11,r0
-  add 	 r1, r0		
-  stor 	 r12,r0		
-  add 	 r1, r0		
-  stor 	 r13,r0		
-  add 	 r1, r0		
-  stor 	 r14,r0	     # we still need to store r0 and r15, so let's restore
-  add 	 r1, r0	     # their original values. redelegate their roles... 
-  mov 	 r0, r2	     # make r2 the new PCB pointer, to free up r0
-  mov 	 r1, r3      # make r3 the new word counter (r3 <- 2 bytes)
-  pop 	 r1	     # restore old r1	
-  pop 	 r4	     # pop address of PCB head into r4
-  pop 	 r0          # restore old r0
-  stor 	 r15,r2      # store the stack pointer in the PCB, right after r14
-  add 	 r3,r4	     # increment address of PCB head by one word	
-  add 	 r3,r4	     # increment address of PCB head by another word
-  stor 	 r0,r4	     # store r0 in its slot, at PCB+4
-  add 	 r3,r4	     # take another step down the PCB
-  stor 	 r1,r4       # store r1 here.
-  
-# We leave the NEXT pointer unchanged. PID seems to play no role just yet. 
 
-  #################################################################
-  # Place your code here to move the current process to the end of
-  # the ready queue, thus making the next process ready to run.
-  # This takes four (4) lines of code.  (see dequeue_proc() and enqueue_proc())
-  #################################################################
+  push  r0             # save r0
+  call  get_curr_proc  # get current pcb
+  push  r0             # save pointer to PCB 
+  push  r1             # save r1 
+  loadi 8, r1          # offset 8 in PCB is where r2 begins
+  add   r1, r0         #
+  loadi 2, r1          # we will advance by two bytes.
+  stor  r2, r0         # store r2
+  add   r1, r0         # advance r0
+  stor  r3, r0         # store r3 in PCB
+  add   r1, r0         # advance r0
+  stor  r4, r0         # store r4 in PCB
+  add   r1, r0         # advance r0
+  stor  r5, r0         # store r5 in PCB
+  add   r1, r0         # advance r0
+  stor  r6, r0         # store r6 in PCB
+  add   r1, r0         # advance r0
+  stor  r7, r0         # store r7 in PCB
+  add   r1, r0         # advance r0
+  stor  r8, r0         # store r8 in PCB
+  add   r1, r0         # advance r0
+  stor  r9, r0         # store r9 in PCB
+  add   r1, r0         # advance r0
+  stor  r10, r0        # store r10 in PCB
+  add   r1, r0         # advance r0
+  stor  r11, r0        # store r11 in PCB
+  add   r1, r0         # advance r0
+  stor  r12, r0        # store r12 in PCB
+  add   r1, r0         # advance r0
+  stor  r13, r0        # store r13 in PCB
+  add   r1, r0         # advance r0
+  stor  r14, r0        # store r14 in PCB
+  add   r1, r0         # advance r0
 
-context_switch:        # context_switch in the next process to run
-  call 	dequeue_proc
-  push 	r0	       # r0 will contain pointer to PCB of deq'd proc
-  call 	enqueue_proc   # by passing this pointer as a param to enq, 
-  pop 	r0	       # we move it to back of Q. pop r0 to clean stack	
+  mov   r0, r2         # move r0 to r2
+  mov   r1, r3         # mov  r1 to r3
+  pop   r1             # restore  r1
+  pop   r4             # save pointer to PCB in r4
+  pop   r0             # restore  r0
+  stor  r15, r2        # store r15 in PCB
+  add   r3, r4         # locate register r0 in PCB
+  add   r3, r4         #
+  stor  r0, r4         # store r0 in PCB
+  add   r3, r4         #
+  stor  r1, r4         # store r1 in PCB
 
+  call  get_ker_stack   # switch to kernel stack
+  mov   r0, r15         # 
+  call  get_curr_proc   # get current process
+  push  r0              # enqueue the returned process on the ready queue
+  call  enqueue_proc    #
+  pop   r0              # clean stack
+  call select_next_proc # select next proc from ready queue
 
-  #################################################################
-  # Place your code here to context switch in the current process.
-  # Use get_curr_proc() to get access to current proc's PCB.
-  # Becareful not to corrupt any of the registers.
-  # This should take approximately 40 - 50 instructions.
-  #################################################################
+  # if we wanted to do more, we would do it here.
+  # next process in the queue is automatically selected.
 
-  call 	get_curr_proc        # returns pointer to curr PCB in r0
-  loadi 0x22, r1             # 
-  add 	r1, r0		     # PCB.head + (15*2)+4 = addr of stack pointer
-  load 	r0, r15		     # restore stack pointer to state saved in PCB
-  loadi 0x2, r1              # as before, let r1 hold the step-size (2B)
-  sub 	r1,r0		     # now walk backwards through the reg space
-  load 	r0,r14		     # of the PCB, and restore the registers in
-  sub 	r1,r0		     # descending order. 
-  load 	r0,r13		
-  sub 	r1,r0		
-  load 	r0,r12		
-  sub 	r1,r0		
-  load 	r0,r11		
-  sub 	r1,r0		
-  load 	r0,r10		
-  sub 	r1,r0		
-  load 	r0,r9		
-  sub 	r1,r0		
-  load 	r0,r8		
-  sub 	r1,r0		
-  load 	r0,r7		
-  sub 	r1,r0		
-  load 	r0,r6		
-  sub 	r1,r0		
-  load 	r0,r5		
-  sub 	r1,r0		
-  load 	r0,r4		
-  sub 	r1,r0		
-  load 	r0,r3		
-  sub 	r1,r0		
-  load 	r0,r2		
-  sub 	r1,r0		
-  load 	r0,r1		
-  dec 	r0		
-  dec 	r0		
-  load 	r0,r0		
+context_switch:        # context_switch in the process
+  call get_curr_proc   # get current PCB
+  loadi 34, r1         # restor  stack from PCB
+  add r1, r0           # index to r15 in PCB
+  load r0, r15         # stack set
+  loadi 2, r1          # decrement for loading registers
+  sub   r1, r0         # 
+  load r0, r14         # load register 14 from PCB
+  sub   r1, r0         # 
+  load r0, r13         # load register 13 from PCB
+  sub   r1, r0         # 
+  load r0, r12         # load register 12 from PCB
+  sub   r1, r0         # 
+  load r0, r11         # load register 11 from PCB
+  sub   r1, r0         # 
+  load r0, r10         # load register 10 from PCB
+  sub   r1, r0         # 
+  load r0, r9          # load register 9 from PCB
+  sub   r1, r0         # 
+  load r0, r8          # load register 8 from PCB
+  sub   r1, r0         # 
+  load r0, r7          # load register 7 from PCB
+  sub   r1, r0         # 
+  load r0, r6          # load register 6 from PCB
+  sub   r1, r0         # 
+  load r0, r5          # load register 5 from PCB
+  sub   r1, r0         # 
+  load r0, r4          # load register 4 from PCB
+  sub   r1, r0         # 
+  load r0, r3          # load register 3 from PCB
+  sub   r1, r0         # 
+  load r0, r2          # load register 2 from PCB
+  sub   r1, r0         # 
+  load r0, r1          # load register 0 from PCB
+  dec r0               #
+  dec r0               #
+  load r0, r0          # load register 0 from PCB
+
   iret                 # return from interrupt
 
 
@@ -169,30 +175,27 @@ context_switch:        # context_switch in the next process to run
 # return: none
 #############
 trap_hdlr:             # 
-                        
-  #################################################################
-  # Place your code here to implement the trap handler.
-  # Be sure to switch tozb kernel's stack as part of the before calling any
-  # of the kernel's functions.
-  # Note, you do not need to do much because you have kputs() to use.
-  # This should take approximately 20 instructions.
-  #################################################################
-  push   r14                # kernel_gold uses r0. better to reserve bp
-  mov    r15, r14           # save stack pointer in r14 
-  loadi  ker_stack, r15     # switch stack pointer to kernel stack
-  push   r14
-  push   r1
-  loadi  0x6, r1
-  add    r1, r14            # add 6 to base pointer to access params
-  load   r14, r0
-  push   r0                 # pass parameter as parameter to kputs
-  call   kputs              # print the character passed as param
-  pop    r0                 # clear r0 off the stack
-  pop    r1                 #
-  pop    r14                # clean up the stack
-  mov    r14, r15           # restore stack pointer to prior state
-  pop    r14                # 
-  iret              
+  push  r0             # save registers
+  push  r1             #
+
+  mov   r15, r1        # save proc stack
+  call  get_ker_stack  # change to kernel stack
+  mov   r0, r15        # change to kernel stack
+  push  r1             # save pointer to proc stack
+
+  loadi 8, r0          # locate param on process stack
+  add   r0, r1         #
+  load  r1, r1         # load param
+  push  r1             # prepare to call kputs
+  call  kputs          # print string
+  pop   r1             # pop off param
+
+  pop   r1             # restore pointer to proc stack
+  mov   r1, r15        # restore  process stack
+
+  pop   r1             # restore registers
+  pop   r0             # 
+  iret                 # return
 
 
 ###############################################################################
@@ -206,7 +209,7 @@ flt_hdlr:
 
 ###############################################################################
 
-###################### DO NOT MODIFY ANYTHING BELOW HERE ######################
+######################  ###############################  ######################
 
 ###############################################################################
 
@@ -238,6 +241,7 @@ output:
 done:
   loadi 0xa, r1        # output newline
   out   r1             #  
+
   pop   r1             # restor  r1
   pop   r0             # restor  r0
   ret                  # return
@@ -281,9 +285,18 @@ setup_procs:
   # allocate stacks for each process
   loadi 1024, r3        # each stack will be 1024 bytes
   mov   r3, r7          # r7 now holds size of each stack
-  mul r0, r3            # multiple by number of processes
-  add r3, r2            # add to start of stack space
+  mul   r0, r3          # multiple by number of processes
+  add   r3, r2          # add to start of stack space
   stor  r2, r1          # modify free_space pointer
+
+  # allocate  CPU-proc table
+  cpunum r3             # get number of CPUs
+  add   r3, r3          # multiply by 4 (two words each)
+  add   r3, r3          # 
+  add   r2, r3          # compute size of free space
+  stor  r3, r1          # modify free_space pointer
+  loadi cpu_tab, r1     # set the pointer to cpu_proc table
+  stor  r2, r1          # modify the cpu_tab pointer
 
   # set up each PCB and stack
   xor   r1, r1          # zero out r1
@@ -331,6 +344,57 @@ sp_loop_done:
 
 
 ###############################################################################
+# Set up kernel stack (256 words) and return pointer to stack in r0
+# params: none
+# return: pointer to new stack
+##############
+setup_ker_stack:
+  push r1               # save registers
+  push r2
+
+  loadi free_space, r1  # get location of free space 
+  load  r1, r0          # load pointer to free space
+  loadi 512, r2         # set size of stack
+  add   r2, r0          # determine start of stack and new free space
+  stor  r0, r1          # save new start of free space
+
+  loadi cpu_tab, r1     # get location of cpu_tab pointer
+  load  r1, r1          # get start of cpu_tab
+  cpuid r2              # get cpuid
+  add   r2, r2          # multiple by 4 (double twice) to get offset into tab
+  add   r2, r2          #
+  add   r2, r1          # add to start of table to find proc's record
+  loadi 2, r2           # offset into record
+  add   r2, r1          # add it to offset of record
+  stor  r0, r1          # store location of stack into CPU record
+
+  pop   r2              # restore registers
+  pop   r1
+  ret                   # return result in r0
+
+
+###############################################################################
+# get proc's kernel stack
+# return: pointer to kernel stack in r0
+##############
+get_ker_stack:
+  push r1               # save registers
+
+  loadi cpu_tab, r1     # get location of cpu_tab pointer
+  load  r1, r1          # get start of cpu_tab
+  cpuid r0              # get cpuid
+  add   r0, r0          # multiple by 4 (double twice) to get offset into tab
+  add   r0, r0          #
+  add   r0, r1          # add to start of table to find proc's record
+  loadi 2, r0           # offset into record
+  add   r0, r1          # add it to offset of record
+  load  r1, r0          # load stack location from record
+
+  pop   r1              # restore registers
+  ret                   # return result in r0
+
+
+###############################################################################
 # count the number of processes to be loaded by the kernel. 
 # determine start of free space
 # stores number of procs in num_procs and returns number of procs in r0
@@ -367,14 +431,52 @@ cp_loop:               # loop until we hit -1
 
 
 ###############################################################################
+# select next process to run, or spin until a process is available.
+# the new process is stored in the cpu table (one entry per cpu)
+# params: none
+# return: none
+##############
+select_next_proc:
+  push  r0             # save registers
+  push  r1             # 
+
+  cpuid r1             # get cpu id
+  add   r1, r1         # offset = 4 * cpuid
+  add   r1, r1         # 
+  loadi cpu_tab, r0    # load location of pointer to cpu_tab
+  load  r0, r0         # load start of cpu_tab
+  add   r0, r1         # add offset to start of cpu_tab (loc to store pcb ptr)
+select_wait:           # loop until we have dequeued a proc
+  call  dequeue_proc   # attempt dequeue
+  test  r0, r0         # if valid pcb pointer
+  br    select_fini    #   finish up
+  jr    select_wait    # else loop and try again
+select_fini:           # finish selection
+  stor  r0, r1         # store ptr to pcb in cpu_tab
+
+  pop   r1             # restore regs
+  pop   r0             # 
+  ret                  # return
+
+
+###############################################################################
 # get pointer to current proc's PCB and return it in register r0
 # params: none
 # return: pointer to PCB of current process
 ##############
 get_curr_proc:
-  loadi qhead, r0      # load loc of head
-  load  r0, r0         # load pointer into r0
-  ret
+  push  r1             # save registers
+  
+  cpuid r1             # get cpuid
+  add   r1, r1         # compute offset cpuid * 4 (double twice)
+  add   r1, r1         # 
+  loadi cpu_tab, r0    # load loc of cpu_tab
+  load  r0, r0         # load pointer to cpu_tab
+  add   r1, r0         # compute offset of cpu_tab
+  load  r0, r0         # load pcb of current proc
+
+  pop   r1             # restore r1
+  ret                  # return ptr to PCB of current proc in r0
 
 
 ###############################################################################
@@ -389,6 +491,10 @@ dequeue_proc:
   loadi qhead, r1      # load loc of head
   load  r1, r0         # load pointer to head into r0
   push  r0             # save pointer
+  test  r0, r0         # test is list is empty or not
+  br    deq_not_empty  # if not, jump to the remove pcb code
+  jr    deq_done       # else we are done here
+deq_not_empty: 
   load  r0, r0         # load next from PCB
   stor  r0, r1         # store into head
   test  r0, r0         # test if list is empty
@@ -396,6 +502,7 @@ dequeue_proc:
     loadi qtail, r1    # load loc of tail
     stor  r0, r1       # set to null
 deq_done:
+
   pop   r0             # retore pointer to dequeued PCB
   pop   r1      
   ret
@@ -427,7 +534,7 @@ enqueue_proc:
     push r1            # save ptr to tail
     loadi qhead, r1    # get location of head ptr
     stor  r0, r1       # set head to PCB
-    pop  r1            # restore  tail
+    pop  r1            # restor  tail
     jr enq_done
 enq_nonempty:
     push r1            # save pointer to tail loc
@@ -441,11 +548,61 @@ enq_done:
   pop   r0
   ret 
 
+###############################################################################
+# Acquire the global kernel lock 
+# params: none
+# return: none
+##############
+  # Place your code here to implement the lock acquire
+  # This function is called when by the kernel running on one of the CPUS
+  # to acquire the lock
+  # If this function is called, and the lock is not presently acquired
+  # The lock should be locked (acquired) and the function returns 
+  # If the lock is already acuired, this function makes the calling kernel wait
+  # Once the lock is unlocked (by another kernel), the calling kernel can
+  # acquire the lock, and if successesful it returns
+  # Note you may need to create a kernel variable as part of the lock 
+  # implementation
+
+lock:
+  push   r13
+  push   r12
+spinlock:
+  loadi  semaphore, r13
+  tnset  r13, r12
+  test   r12, r12
+  br     spinlock
+  pop    r12
+  pop    r13
+  ret
+  
+
+###############################################################################
+# Release the global kernel lock 
+# params: none
+# return: none
+##############
+unlock:
+
+  # Place your code here to implement the lock release
+  # This function is called by the current lock holder to release the lock
+  # Once the lock is released this function returns.
+  # kernel running on another CPU  can now acquire the lock
+
+  push     r13
+  push     r12
+  xor      r12, r12
+  loadi    semaphore, r13
+  stora    r12, r13
+  pop      r12
+  pop      r13
+  ret 
+
 
 ###############################################################################
 # System variables:
 ###################
-# ker_stack    points to the end of the stack used by the kernel
+# tmp_stack    points to the end of the temporary stack used by the kernel
 # int_tab      points to  the interrupt table
 #
 # free_space   stores the location of the start of the free memory space
@@ -454,19 +611,17 @@ enq_done:
 # qtail        stores the tail of the ready queue
 # proc_stacks  stores the location of the process' stacks in the system
 # pcb_tab      stores the location of the PCB table
+# cpu_tab      stores the location of ptrs to PCBs of current processes on CPUs
 # proc_locs    points to the table of offsets to processes to be loaded
 
 .words 512
-ker_stack:
+tmp_stack:
 
-
-# this seemed like a mistake. Shouldn't
-# ".words 512" be *beneath* ker_stack?
-# (originally, ker_stack label was *below*
-# ".words 512", and this is how it was
-# compiled). 
 int_tab:
   .words 4
+
+semaphore:              # might not use this approach after all. 
+        .words 1
 
 free_space:
   .words 1
@@ -484,6 +639,12 @@ proc_stacks:
   .words 1
 
 pcb_tab:
+  .words 1
+
+init_flag:
+  .literal 0
+
+cpu_tab:
   .words 1
 
 proc_locs:
