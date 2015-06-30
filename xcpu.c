@@ -12,10 +12,15 @@
 
 #define WORD_SIZE 2    // word size in bytes
 #define BYTE 8         // byte size in bits
-#define MEMSIZE 0x10000
+#define MEMSIZE 0x10000//0x10000
 #define LOG stderr
 
-// a handy macro for fetching word-sized chunks of data from memory
+
+/******************************************************************
+   Constructs a word out of two contiguous bytes in a byte array,
+   and returns it. Can be used to fetch instructions, labels, and
+   immediate values.
+******************************************************************/
 #define FETCH_WORD(ptr)                                                 \
   (((unsigned short int) (c->memory[(ptr) % MEMSIZE] << 8)) & 0xFF00)   \
   |(((unsigned short int) (c->memory[((ptr)+1) % MEMSIZE])) & 0x00FF)
@@ -31,6 +36,26 @@
   dest = FETCH_WORD(c->regs[15]);               \
   c->regs[15] += 2;
 
+static pthread_mutex_t cpulock = PTHREAD_MUTEX_INITIALIZER;    
+
+#ifndef LOCK
+
+
+
+#define LOCK(lockname) \
+
+  if (pthread_mutex_lock(&(lockname))){ \
+    fprintf(LOG, "-=-= FAILURE TO ACQUIRE LOCK! =-=-\n"); \
+    abort();\
+  } 
+
+#define UNLOCK(lockname) \
+  if (pthread_mutex_unlock(&(lockname))){ \
+    fprintf(LOG, "-=-= FAILURE TO RELEASE LOCK! =-=-\n"); \
+    abort(); \
+  } 
+
+#endif
 
 /** halt flag **/
 // int _halt = 1; // set to 0 when BAD instruction encountered.
@@ -117,7 +142,7 @@ void* build_jump_table(void){
   table[I_TRAP] = trap;    table[I_LIT]   = lit;
   // Instructions for handling threading (added in Assignment 3)
   table[I_CPUID] = cpuid;  table[I_CPUNUM]= cpunum;  table[I_LOADA] = loada;
-  table[I_TNSET] = tnset;
+  table[I_TNSET] = tnset;  table[I_STORA] = stora;
   return table;
 }
 /*************************************************
@@ -195,15 +220,16 @@ void xcpu_print( xcpu *c ) {
  actual 'halting' is handled by xsim.c.
 *************************************************************/
 int xcpu_execute(xcpu *c, IHandler *table) {
-  unsigned char opcode;
-  unsigned short int instruction = FETCH_WORD(c->pc);
-  //fetch_word(c->memory, c->pc); 
-  opcode = (unsigned char)( (instruction >> 8) & 0x00FF); 
+  unsigned char opcode[c->num];
+  unsigned short int instruction[c->num];
+  
+  instruction[c->id] = FETCH_WORD(c->pc);
+  opcode[c->id] = (unsigned char)( (instruction[c->id] >> 8) & 0x00FF); 
   c->pc += WORD_SIZE;  // extended instructions will increment pc a 2nd time
-  (table[opcode])(c, instruction);
+  (table[opcode[c->id]])(c, instruction[c->id]);
   if (c->state & 0x2) // check
     xcpu_print(c);
-  return (opcode != I_BAD); //_halt;
+  return (opcode[c->id] != I_BAD); //_halt;
 }
 
 
@@ -226,17 +252,6 @@ int xcpu_exception( xcpu *c, unsigned int ex ) {
   }
   return 0;
 }
-/******************************************************************
-   Constructs a word out of two contiguous bytes in a byte array,
-   and returns it. Can be used to fetch instructions, labels, and
-   immediate values.
-******************************************************************/
-unsigned short int fetch_word(unsigned char *mem, unsigned short int ptr){
-  unsigned short int word =
-    (((unsigned short int) (mem[ptr % MEMSIZE] << 8)) & 0xFF00)
-    |(((unsigned short int) (mem[(ptr+1) % MEMSIZE]))   & 0x00FF);
-  return word;
-}
 
 
 
@@ -245,7 +260,9 @@ unsigned short int fetch_word(unsigned char *mem, unsigned short int ptr){
  *********************************/
 
 INSTRUCTION(bad){
-  // do nothing! 
+  if ((unsigned char)( (instruction >> 8) & 0x00FF) != 0x00){ 
+    printf("\n***** BAD INSTRUCTION ON CPU %d: %4.4x at PC %4.4x *****\n", c->id, instruction, c->pc-WORD_SIZE);
+  }
 }
 INSTRUCTION(ret){
   POPPER(c->pc);
@@ -297,15 +314,15 @@ INSTRUCTION(jr){
 }
 INSTRUCTION(add){
   c->regs[XIS_REG2(instruction)] =
-    c->regs[XIS_REG1(instruction)] + c->regs[XIS_REG2(instruction)];
+    (c->regs[XIS_REG1(instruction)] + c->regs[XIS_REG2(instruction)]) % 0x10000;
 }
 INSTRUCTION(sub){
-  c->regs[XIS_REG2(instruction)] =
-    c->regs[XIS_REG2(instruction)] - c->regs[XIS_REG1(instruction)];
+  c->regs[XIS_REG2(instruction)] = (unsigned short)
+    c->regs[XIS_REG2(instruction)] + ~c->regs[XIS_REG1(instruction)];
 }
 INSTRUCTION(mul){
   c->regs[XIS_REG2(instruction)] =
-    c->regs[XIS_REG2(instruction)] * c->regs[XIS_REG1(instruction)];
+    (c->regs[XIS_REG2(instruction)] * c->regs[XIS_REG1(instruction)]) % 0x10000;
 }
 INSTRUCTION(divide){  
   c->regs[XIS_REG2(instruction)] =
@@ -324,12 +341,12 @@ INSTRUCTION(xor){
     c->regs[XIS_REG2(instruction)] ^ c->regs[XIS_REG1(instruction)];
 }
 INSTRUCTION(shr){
-  c->regs[XIS_REG2(instruction)] = c->regs[XIS_REG2(instruction)] >>
-    c->regs[XIS_REG1(instruction)];
+  c->regs[XIS_REG2(instruction)] = (unsigned short)
+    c->regs[XIS_REG2(instruction)] >> c->regs[XIS_REG1(instruction)];
 }
 INSTRUCTION(shl){
-  c->regs[XIS_REG2(instruction)] = c->regs[XIS_REG2(instruction)] <<
-    c->regs[XIS_REG1(instruction)];
+  c->regs[XIS_REG2(instruction)] = (unsigned short)
+    c->regs[XIS_REG2(instruction)] << c->regs[XIS_REG1(instruction)];
 }
 INSTRUCTION(test){
   c->state = (c->regs[XIS_REG1(instruction)] & c->regs[XIS_REG2(instruction)])?
@@ -411,24 +428,50 @@ INSTRUCTION(cpunum){
   c->regs[XIS_REG1(instruction)] = c->num;
 }
 INSTRUCTION(loada){
-  LOCK(lk);
+  if (pthread_mutex_lock(&(cpulock))){                   
+    fprintf(LOG, "-=-= FAILURE TO ACQUIRE LOCK! =-=-\n"); 
+    abort();                                              
+  } 
+  // LOCK(cpulock);  // I think there's a problem here. 
   c->regs[XIS_REG2(instruction)] = FETCH_WORD(c->regs[XIS_REG1(instruction)]);
-  UNLOCK(lk);
+  if (pthread_mutex_unlock(&(cpulock))){ 
+    fprintf(LOG, "-=-= FAILURE TO RELEASE LOCK! =-=-\n"); 
+    abort(); 
+  } 
+  
+  //UNLOCK(cpulock);
 }
 INSTRUCTION(stora){
-  LOCK(lk);
+  // LOCK(cpulock);
+  if (pthread_mutex_lock(&(cpulock))){                   
+    fprintf(LOG, "-=-= FAILURE TO ACQUIRE LOCK! =-=-\n"); 
+    abort();                                              
+  }
   c->memory[c->regs[XIS_REG2(instruction)] % MEMSIZE] =
     (unsigned char) ((c->regs[XIS_REG1(instruction)] >> 8));
   c->memory[(c->regs[XIS_REG2(instruction)]+1) % MEMSIZE] =
     (unsigned char) ((c->regs[XIS_REG1(instruction)]) & 0xFF);  
-  UNLOCK(lk);
+  if (pthread_mutex_unlock(&(cpulock))){ 
+    fprintf(LOG, "-=-= FAILURE TO RELEASE LOCK! =-=-\n"); 
+    abort(); 
+  } 
+ 
+  // UNLOCK(cpulock);
 }
 INSTRUCTION(tnset){
-  LOCK(lk);
+  //LOCK(cpulock);
+  if (pthread_mutex_lock(&(cpulock))){                   
+    fprintf(LOG, "-=-= FAILURE TO ACQUIRE LOCK! =-=-\n"); 
+    abort();                                              
+  }
   c->regs[XIS_REG2(instruction)] = FETCH_WORD(c->regs[XIS_REG1(instruction)]);
-  c->memory[c->regs[XIS_REG2(instruction)] % MEMSIZE] = 0;
-  c->memory[(c->regs[XIS_REG2(instruction)]+1) % MEMSIZE] = 1;
-  UNLOCK(lk);
+  c->memory[c->regs[XIS_REG1(instruction)] % MEMSIZE] = 0;
+  c->memory[(c->regs[XIS_REG1(instruction)]+1) % MEMSIZE] = 1;
+  if (pthread_mutex_unlock(&(cpulock))){ 
+    fprintf(LOG, "-=-= FAILURE TO RELEASE LOCK! =-=-\n"); 
+    abort(); 
+  } 
+  //UNLOCK(cpulock);
 }
 
 /** That's all, folks! **/

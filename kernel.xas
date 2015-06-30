@@ -8,8 +8,9 @@
 # 4. Each CPU creates its own stack.
 # 5. Jump to context_switcher
 #############
+  #std #### debug flag
   sti                  # set IN_INTERRUPT flag (disable interrupts)
-
+ 
   loadi tmp_stack, r15 # setup temporary stack for the kernel
 
   loadi int_tab, r0    # load location of interrupt table
@@ -36,7 +37,15 @@
 
   loadi init_flag, r0  # set init flag to be done
   loadi 1, r1          #
-  stor  r1, r0         #
+  stora  r1, r0        # <=- changed from stor to stora (OLF)
+###### FOR DEBUGGING! #####
+#  push   r2
+#  loadi  0x41, r2
+#  out    r2
+#  loadi  0x0a, r2
+#  out    r2
+#  pop    r2
+###########################
   jr finish_init       # proceed to finish kernel initialization
 
 wait_for_init:         # wait until kernel init is complete
@@ -45,6 +54,20 @@ wait_loop_1:
   loada r0, r2         # grap init_flag value
   equ  r1, r2          # test if it is this CPU's turn
   br finish_init       # if so, finish initialization
+######## for debugging ###########
+#  push r2
+#  push r3
+#  loadi 0x61, r2
+#  cpuid r3
+#  add   r3, r2
+#  out   r2
+#  pop r3
+#  pop r2
+##################################
+# print 'a' for cpu 0, 'b' for cpu 1, etc.
+##################################
+
+
   jr wait_loop_1       # else wait
 
 finish_init:
@@ -67,6 +90,12 @@ finish_init:
 # 2 select next process to run
 # 3 context switch process in (including switch back to process' stack)
 #############
+# There is no critical section here, because each process will be
+# writing only to its *own* PCB. If we had multiple threads share a
+# single process, and therefore a single PCB, then we would certainly
+# need to wrap this in a lock/unlock pair.
+#############
+
 int_hdlr:              # interrupt handler 
 
   push  r0             # save r0
@@ -127,8 +156,12 @@ int_hdlr:              # interrupt handler
   # next process in the queue is automatically selected.
 
 context_switch:        # context_switch in the process
+######################################################################
+# Again, we don't need to treat this as a critical section, since
+# we should never have multiple threads accessing the same PCB.
+######################################################################
   call get_curr_proc   # get current PCB
-  loadi 34, r1         # restor  stack from PCB
+  loadi 34, r1         # restore  stack from PCB
   add r1, r0           # index to r15 in PCB
   load r0, r15         # stack set
   loadi 2, r1          # decrement for loading registers
@@ -225,9 +258,10 @@ kputs:
   push  r1
   mov   r15, r1        # save stack pointer
   loadi 6, r0          # add 3 words to access params
-  add   r0, r1 
+  add   r0, r1
   load  r1, r0         # load param into r0
-
+  call  lock           # <== added a call to lock here.
+                       # the first load is threadsafe; from local stack
 loop:                  # loop through string
   loadb r0, r1         # load byte
   test  r1, r1         # check if not nil byte
@@ -240,7 +274,8 @@ output:
 
 done:
   loadi 0xa, r1        # output newline
-  out   r1             #  
+  out   r1             #
+  call  unlock
 
   pop   r1             # restor  r1
   pop   r0             # restor  r0
@@ -489,6 +524,8 @@ dequeue_proc:
   push  r1
 
   loadi qhead, r1      # load loc of head
+  call  lock           # lock before entering critical section: reading
+                       # from PCB queue might be garbled by other threads
   load  r1, r0         # load pointer to head into r0
   push  r0             # save pointer
   test  r0, r0         # test is list is empty or not
@@ -502,6 +539,8 @@ deq_not_empty:
     loadi qtail, r1    # load loc of tail
     stor  r0, r1       # set to null
 deq_done:
+
+  call  unlock         # finished CS: safe for other threads to proceed
 
   pop   r0             # retore pointer to dequeued PCB
   pop   r1      
@@ -519,14 +558,17 @@ enqueue_proc:
 
   mov   r15, r0        # get parameter 
   loadi 6, r1          #
-  add   r1, r0         # point to parm 1
-  load  r0, r0         # load parm 1
+  add   r1, r0         # point to param 1
+  load  r0, r0         # load param 1
 
   xor   r1, r1         # zero r1
   stor  r1, r0         # clear next pointer of PCB
   push  r0             # save r0 on the stack
+  loadi qtail, r1      # load tail of list
   
-  loadi qtail, r1      # load tail of list 
+  call  lock           # lock before entering critical section:
+                       # multiple threads could garble PCB writing
+
   load  r1, r0         # into r0
   test  r0, r0         # test if null (list is empty)
   pop  r0              # retore ptr to PCB
@@ -543,6 +585,8 @@ enq_nonempty:
     pop r1             # restor  location of tail
 enq_done:
   stor  r0, r1         # point tail to new PCB
+
+  call  unlock         # finished critical section: unlock
 
   pop   r1
   pop   r0
