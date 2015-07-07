@@ -3,7 +3,7 @@
 #include "xcpu.c"
 #endif
 char prchar(char c);
-void xdumper(xcpu *c);
+void xdumper(xcpu *c, int enumerate);
 void disas(xcpu *c);
 char ** build_disas_table(void);
 void xcpu_pretty_print(xcpu *c);
@@ -29,7 +29,7 @@ void disas(xcpu *c){
   //char *reg1, *reg1_val, *reg2, *reg2_val, *label, *numval; // tidy up
   char istring[80] = "";
   char operand[80] = "";
-  char mnemonic[8];
+  char mnemonic[8] = "";
   int i;
   
   for(i = 0; i < I_NUM; i++) {
@@ -38,7 +38,13 @@ void disas(xcpu *c){
       break;
     }
   }
+  if (!strlen(mnemonic)) // if no instruction found
+    sprintf(mnemonic, "# (unknown) [%4.4x]\0", instruction);
+  if (!strncmp(mnemonic,"(null)",6))
+    sprintf(mnemonic, "# (null)    [%4.4x]\0", instruction);
   strcat(istring,mnemonic);
+  if (mnemonic[0] == '#')
+    goto end_disas;
   strcat(istring,"\t");
   
   //fprintf(LOG,"%s",mnemonic);
@@ -68,6 +74,7 @@ void disas(xcpu *c){
   }
   //fprintf(LOG, "%s", operand);
   strcat(istring, operand);
+ end_disas:
   fprintf(LOG, "%s\n", istring);
 }
 
@@ -76,8 +83,10 @@ void disas(xcpu *c){
  * during live debugging, or called in a loop from the xdump utility, to
  * disassemble the object code from start to finish (similar to objdump). 
  *************************************************************************/
-void xdumper(xcpu *c){
+void xdumper(xcpu *c, int enumerate){
   unsigned char opcode = (unsigned char)(( (FETCH_WORD(c->pc)) >> 8) & 0x00FF);
+  if (enumerate)
+    fprintf(LOG, "%4.4x>   ", c->pc);
   disas(c);
   c->pc += (XIS_NUM_OPS(opcode) == XIS_EXTENDED)? 2*WORD_SIZE : WORD_SIZE;
 }

@@ -16,11 +16,12 @@
 typedef struct xcpu_context {        
   unsigned char *memory;              /* pointer to shared memory segment */
   unsigned short regs[X_MAX_REGS];    /* general register file */
-  unsigned short pc;                  /* program counter */
   unsigned short state;               /* state register */
   unsigned short itr;                 /* interrupt table register */
   unsigned short id;                  /* cpu identifier */
   unsigned short num;                 /* number of cpus */
+  unsigned short pc;                  /* program counter */
+  /** moved pc to bottom of struct, to guard against buffer overflow vulns **/
 } xcpu;
 
 

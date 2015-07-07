@@ -37,7 +37,7 @@
 
   loadi init_flag, r0  # set init flag to be done
   loadi 1, r1          #
-  stora  r1, r0        # <=- changed from stor to stora (OLF)
+  stor  r1, r0         # <=- change from stor to stora???
 ###### FOR DEBUGGING! #####
 #  push   r2
 #  loadi  0x41, r2
@@ -105,6 +105,7 @@ int_hdlr:              # interrupt handler
   loadi 8, r1          # offset 8 in PCB is where r2 begins
   add   r1, r0         #
   loadi 2, r1          # we will advance by two bytes.
+  # call  lock           # <---------- added a lock here
   stor  r2, r0         # store r2
   add   r1, r0         # advance r0
   stor  r3, r0         # store r3 in PCB
@@ -143,7 +144,7 @@ int_hdlr:              # interrupt handler
   stor  r0, r4         # store r0 in PCB
   add   r3, r4         #
   stor  r1, r4         # store r1 in PCB
-
+  # call  unlock         # <------------- added an unlock here
   call  get_ker_stack   # switch to kernel stack
   mov   r0, r15         # 
   call  get_curr_proc   # get current process
@@ -165,6 +166,7 @@ context_switch:        # context_switch in the process
   add r1, r0           # index to r15 in PCB
   load r0, r15         # stack set
   loadi 2, r1          # decrement for loading registers
+  # call  lock           # <----------------- added lock
   sub   r1, r0         # 
   load r0, r14         # load register 14 from PCB
   sub   r1, r0         # 
@@ -196,6 +198,7 @@ context_switch:        # context_switch in the process
   dec r0               #
   dec r0               #
   load r0, r0          # load register 0 from PCB
+  # call unlock          # <------- added unlock
 
   iret                 # return from interrupt
 
@@ -218,6 +221,7 @@ trap_hdlr:             #
 
   loadi 8, r0          # locate param on process stack
   add   r0, r1         #
+  
   load  r1, r1         # load param
   push  r1             # prepare to call kputs
   call  kputs          # print string
@@ -522,9 +526,9 @@ get_curr_proc:
 ##############
 dequeue_proc:
   push  r1
-
-  loadi qhead, r1      # load loc of head
   call  lock           # lock before entering critical section: reading
+  loadi qhead, r1      # load loc of head
+
                        # from PCB queue might be garbled by other threads
   load  r1, r0         # load pointer to head into r0
   push  r0             # save pointer
@@ -567,8 +571,7 @@ enqueue_proc:
   loadi qtail, r1      # load tail of list
   
   call  lock           # lock before entering critical section:
-                       # multiple threads could garble PCB writing
-
+                       # multiple threads could garble PCB writingoo
   load  r1, r0         # into r0
   test  r0, r0         # test if null (list is empty)
   pop  r0              # retore ptr to PCB
@@ -612,13 +615,13 @@ lock:
   push   r13
   push   r12
 spinlock:
-  loadi  semaphore, r13
-  tnset  r13, r12
-  test   r12, r12
-  br     spinlock
-  pop    r12
-  pop    r13
-  ret
+  loadi  mutex, r13  # r13 now points to mutex variable
+  tnset  r13, r12    # test and set value of mutex<-1, store prev val in r12
+  test   r12, r12    # if mutex was already set, then another proc has locked it
+  br     spinlock    # so wait your turn
+  pop    r12         # restore registers
+  pop    r13         
+  ret                # that's all
   
 
 ###############################################################################
@@ -633,12 +636,12 @@ unlock:
   # Once the lock is released this function returns.
   # kernel running on another CPU  can now acquire the lock
 
-  push     r13
-  push     r12
-  xor      r12, r12
-  loadi    semaphore, r13
-  stora    r12, r13
-  pop      r12
+  push     r13          # preserve registers
+  push     r12          
+  xor      r12, r12     # zero out r12
+  loadi    mutex, r13   # r13 now points to mutex
+  stora    r12, r13     # set mutex to 0, freeing the lock for others
+  pop      r12          # restore registers
   pop      r13
   ret 
 
@@ -657,15 +660,13 @@ unlock:
 # pcb_tab      stores the location of the PCB table
 # cpu_tab      stores the location of ptrs to PCBs of current processes on CPUs
 # proc_locs    points to the table of offsets to processes to be loaded
+# mutex        the kernel mutex lock variable    
 
-.words 512
+.words 1024
 tmp_stack:
 
 int_tab:
   .words 4
-
-semaphore:              # might not use this approach after all. 
-        .words 1
 
 free_space:
   .words 1
@@ -686,9 +687,13 @@ pcb_tab:
   .words 1
 
 init_flag:
-  .literal 0
+  .literal 0 # tnset affects an entire word, not just a byte. 
 
 cpu_tab:
   .words 1
 
 proc_locs:
+  .words 512
+
+mutex:              # might not use this approach after all. 
+  .words 1

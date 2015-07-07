@@ -6,7 +6,7 @@
 #include "xcpu.h"
 #define XCPU
 
-#define LOG stderr
+#define LOG stdout
 #define WORD_SIZE 2    // word size in bytes
 #define BYTE 8         // byte size in bits
 #define MEMSIZE 0x10000
@@ -29,8 +29,6 @@
 #include "xdb.c"
 
 
-
-
 /**
  * A handy utility for disassembling x object code -- something like a simplified
  * version of objdump for the xcpu. 
@@ -41,18 +39,29 @@ FILE* load_file(char *filename);
 int load_programme(xcpu *c, FILE *fd); // in xcpu.c, loaded from xdb.c
 
 int main(int argc, char **argv){
-  if (argc != 2){
+  int enumerate = 0; // boolean
+  if (argc < 2){
     printf("Usage %s <.x or .xo object file>\n", argv[0]);
     exit(EXIT_FAILURE);
   }
+  if (argc >= 3){
+    if (argv[2][0] = '-')
+      switch (argv[2][1]){
+      case 'c':
+        enumerate = 1;
+        break;
+      default:
+        break;
+      }
+  }
   FILE *fd = load_file(argv[1]);
-  printf("*");
+
   xcpu *c = malloc(sizeof(xcpu));
   if (c == NULL){
     fprintf(stderr, "Out of memory.\n");
     exit(EXIT_FAILURE);
   }
-  printf("!");
+
   init_cpu(c);
   int plen, counter;
   plen = load_programme(c,fd);
@@ -62,7 +71,7 @@ int main(int argc, char **argv){
   // loop condition to loop through entire file. (till c->pc >= plen)
   while (c->pc <= plen){
     //printf(".");
-    xdumper(c);
+    xdumper(c, enumerate);
   }
   return 0;
 }
@@ -91,14 +100,14 @@ int load_programme(xcpu *c, FILE *fd){
 
 FILE* load_file(char* filename){
   FILE *fd;
-  printf("loading...\n");
+  
   if ((fd = fopen(filename, "rb")) == NULL){
     char msg[80]="error: could not stat image file ";
     strncat(msg, filename,30);
     fprintf(stderr, "%s\n",msg);
     exit(EXIT_FAILURE);
   }
-  printf("loaded.\n");
+  
   return fd;
 }
 

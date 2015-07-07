@@ -23,8 +23,18 @@
  * or two to evaluate for every machine instruction). Since this cpu is
  * being developed for experimentation rather than for speed, however, 
  * it seems advisable to leave the MOREDEBUG features intact.  
+ * 
+ * UPDATE: MOREDEBUG is no longer interpreted as boolean. It selects the 
+ *         CPU for which debugging info is desired. If set to -1, all CPUs
+ *         will be attended to (-1 is the new 1). If set to -2, no CPUs will.
  **/
-#define MOREDEBUG 0
+
+// There seems to be a data corruption issue when interrupts are frequent and
+// multiple threads are being used. This is probably due to stack overflow.
+// check to make sure that the lock functions are clearing the stack? but gold
+// doesn't have this problem... so it's probably in the C code. 
+
+#define MOREDEBUG -2
 
 #define CYCLE_ARG 1
 #define IMAGE_ARG 2
@@ -36,6 +46,7 @@
 #define DEFAULT_INTERRUPT 0
 #define DEFAULT_CYCLES 0
 
+// Global xmpsim lock variable, "execution lock". 
 static pthread_mutex_t elk = PTHREAD_MUTEX_INITIALIZER; 
 
 #define LOCK(lockname) \
@@ -106,7 +117,9 @@ int main(int argc, char *argv[]){
         You might want a separate function for this. ****/
 
   table = build_jump_table();
-  xcpu c[cpu_num];
+  //xcpu c[cpu_num];
+  xcpu * c;
+  c = (xcpu *) malloc(sizeof(xcpu) * cpu_num);
   mem = calloc(MEMSIZE, sizeof(unsigned char));
   load_programme(mem, fd);
 
@@ -125,82 +138,81 @@ int main(int argc, char *argv[]){
       ; 
     }
   for (u = 0; u < cpu_num; u++){
-    tsignal = pthread_create(&threads[u], NULL, execution_loop, (void *) (c+u));
-    if (tsignal){
+    if (pthread_create(&threads[u], NULL, execution_loop, (void *) (c+u))){
       fprintf(stderr, "Thread %d not okay. Error signal: %d\n", u, tsignal);
       exit(EXIT_FAILURE);
     }
   }
+
   int join_count = 0;
   for (u = cpu_num-1; u >= 0; u--){
-    tsignal = pthread_join(threads[u], NULL);
-    fprintf(stdout, "Joining thread %d: signal %d\n",u, tsignal);
-    join_count ++;
+    join_count += !pthread_join(threads[u], NULL);
   }
 
-  while (--u >= 0){
-    fprintf(LOG,"\nShutting down CPU %d...\n",c[u].id);
-  }
-  
+  // Check for !errors:
   if (join_count == cpu_num){
-    printf("Freeing memory.\n");
     free(mem);
   } else {
-    printf("join count = %d of %d expected\n",join_count, cpu_num);
+    fprintf(LOG, "join count = %d of %d expected\n",join_count, cpu_num);
   }
   
-  while (--u >= 0){
-    fprintf(LOG,"\nShutting down CPU %d...\n",c[u].id);
-  }
   /** Now free the jump table. **/
   destroy_jump_table(table);
   pthread_exit(NULL);
 }
 
 /**************************************************************
- * The main execution loop
+ * The central execution loop
  **************************************************************/
 static void * execution_loop(void * cpu){ // expects pointer to an xcpu struct
-  xcpu *c = (xcpu *) cpu;
+  xcpu *c = (xcpu *) cpu; // we need our parameter back in the form of an xcpu*
   char graceful[40];    
   char out_of_time[40];
   sprintf(graceful, "CPU %d has halted", c->id);
   sprintf(out_of_time, "CPU ran %d out of time", c->id);
-  int halted[c->num], j, i[c->num];
+  int halted[c->num], j, i[c->num]; // deprecate halted?
   // let's have each thread keep its own cycle counter.
   for (j=0; j < c->num; j++){
-    //i[j]=0;
+    i[j]=0;
     halted[j] = 0;
   }
-  int oldpc[c->num];
+  int oldpc[c->num]; // holds previous programme counter
   
-  while ((i[c->id]) < cycles || !cycles){
-    
-    if (MOREDEBUG) fprintf(LOG, "<CYCLE %d> <CPU %d>\n",i[c->id]-1,c->id);
-    if (i[c->id] != 0 && interrupt_freq != 0 && i[c->id] % interrupt_freq == 0)
+  while ( i[c->id] < cycles || !cycles){
+     if (MOREDEBUG == c->id || MOREDEBUG == -1)
+       fprintf(LOG, "<CYCLE %d> <CPU %d>\n",i[c->id]-1,c->id);
+     
+    if (i[c->id] != 0 && interrupt_freq != 0 && i[c->id] % interrupt_freq == 0){
+      // if not in 1st cycle, & interrupts are set, then interrupt periodically
+      //LOCK(elk);
       if (!xcpu_exception(c, X_E_INTR)){
-        LOCK(elk);
+        
         fprintf(stderr, "Exception error at 0x%4.4x. CPU has halted.\n",
                 c->pc);
-        UNLOCK(elk);
+        // terminate thread? pthread_exit(NULL)?
         return NULL;
       }
-   
-    oldpc[c->id] = c->pc;
-    halted[c->id] = !xcpu_execute(c,table);
-   
-    
-    if (MOREDEBUG){
+      //UNLOCK(elk);
+    }
+    oldpc[c->id] = c->pc; // save current instruction for error reporting
+
+    /**
+     * Now, call xcpu_execute function to perform the instruction at c->pc.
+     **/
+    halted[c->id] = !xcpu_execute(c,table); 
+       
+    if (MOREDEBUG == c->id || MOREDEBUG == -1){
       LOCK(elk);
       xcpu_pretty_print(c);
       UNLOCK(elk);
     }
+
     if (halted[c->id]) break;
     i[c->id] ++;
   }
   
   char *exit_msg = (halted[c->id])? graceful : out_of_time;
-  fprintf(stdout, "\n<%s after %d cycles at PC = %4.4x : %4.4x>\n",
+  fprintf(LOG, "\n<%s after %d cycles at PC = %4.4x : %4.4x>\n",
           exit_msg, i[c->id], oldpc[c->id], FETCH_WORD(oldpc[c->id]));
   //  disas(c);
   return NULL;
@@ -224,6 +236,7 @@ int load_programme(unsigned char *mem, FILE *fd){
   do
     mem[addr++] = fgetc(fd);
   while (!feof(fd) && addr < MEMSIZE);
+  fclose(fd);
   if (addr >= MEMSIZE){
     char msg[70]; 
     sprintf(msg, "Programme larger than %d bytes. Too big to fit in memory.",
@@ -232,7 +245,7 @@ int load_programme(unsigned char *mem, FILE *fd){
   }
   return addr;
 }
-
+/*
 void init_cpu(xcpu *c){
   c->memory = calloc(MEMSIZE, sizeof(unsigned char));
   unsigned char i = 0;
@@ -242,7 +255,7 @@ void init_cpu(xcpu *c){
   c->state  = 0x0;
   c->itr    = 0x0;
 }
-
+*/
 void shutdown(xcpu *c){
   free(c->memory);
   free(c);

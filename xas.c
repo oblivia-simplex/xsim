@@ -244,7 +244,6 @@ int main( int argc, char **argv ) {
       r2 = 0;
       value = 0;
 
-      // should be hashed
       for( ip = x_instructions; ip->inst; ip++ ) {
         if( !strcmp( tok, ip->inst ) ) {       /* if instruction found */
           if( XIS_NUM_OPS( ip->code ) == 1 ) {
@@ -336,7 +335,7 @@ int main( int argc, char **argv ) {
           pos += value;
           pos += value & 1;  /* round up to word boundary */
         } else if( rc == INT ) {
-          if( value != (short)value ) {
+          if( ( value < -65536 ) || ( value > 65535 ) ) {
             printf( "error:%d: integer %s is out of range \n", line, tok );
             err++;
             continue;

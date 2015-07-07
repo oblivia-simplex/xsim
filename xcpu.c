@@ -24,7 +24,7 @@
 #define FETCH_WORD(ptr)                                                 \
   (((unsigned short int) (c->memory[(ptr) % MEMSIZE] << 8)) & 0xFF00)   \
   |(((unsigned short int) (c->memory[((ptr)+1) % MEMSIZE])) & 0x00FF)
-// to replace deprecated fetch_word function, and save a bit of runtime.
+
 
 // a helper macro for the various push-style instructions
 #define PUSHER(word)                                                    \
@@ -32,34 +32,13 @@
   c->memory[c->regs[15] % MEMSIZE] = (unsigned char) (word >> 8);       \
   c->memory[(c->regs[15] + 1) % MEMSIZE] = (unsigned char) (word & 0xFF)
 
+// helper macro for pop-style instructions
 #define POPPER(dest)                            \
   dest = FETCH_WORD(c->regs[15]);               \
   c->regs[15] += 2;
 
+/* The lock for the cpu */
 static pthread_mutex_t cpulock = PTHREAD_MUTEX_INITIALIZER;    
-
-#ifndef LOCK
-
-
-
-#define LOCK(lockname) \
-
-  if (pthread_mutex_lock(&(lockname))){ \
-    fprintf(LOG, "-=-= FAILURE TO ACQUIRE LOCK! =-=-\n"); \
-    abort();\
-  } 
-
-#define UNLOCK(lockname) \
-  if (pthread_mutex_unlock(&(lockname))){ \
-    fprintf(LOG, "-=-= FAILURE TO RELEASE LOCK! =-=-\n"); \
-    abort(); \
-  } 
-
-#endif
-
-/** halt flag **/
-// int _halt = 1; // set to 0 when BAD instruction encountered.
-// not sure if this global approach to the halt flag is threadsafe!
 
 extern void xcpu_pretty_print(xcpu *c);
 void xcpu_print(xcpu *c);
@@ -246,8 +225,9 @@ int xcpu_exception( xcpu *c, unsigned int ex ) {
     PUSHER(c->state);
     PUSHER(c->pc);
     c->state |= 0x0004;
+    //LOCK(cpulock);
     c->pc = FETCH_WORD(c->itr+i); // re: i, see comment above
-    
+    //UNLOCK(cpulock);
     return 1; // but returns 0 when not successful. How is this gauged?
   }
   return 0;
@@ -261,7 +241,7 @@ int xcpu_exception( xcpu *c, unsigned int ex ) {
 
 INSTRUCTION(bad){
   if ((unsigned char)( (instruction >> 8) & 0x00FF) != 0x00){ 
-    printf("\n***** BAD INSTRUCTION ON CPU %d: %4.4x at PC %4.4x *****\n", c->id, instruction, c->pc-WORD_SIZE);
+    printf("\n***** BAD INSTRUCTION ON CPU %d: 0x%4.4x at PC 0x%4.4x *****\n", c->id, instruction, (c->pc)-WORD_SIZE);
   }
 }
 INSTRUCTION(ret){
@@ -428,51 +408,25 @@ INSTRUCTION(cpunum){
   c->regs[XIS_REG1(instruction)] = c->num;
 }
 INSTRUCTION(loada){
-  if (pthread_mutex_lock(&(cpulock))){                   
-    fprintf(LOG, "-=-= FAILURE TO ACQUIRE LOCK! =-=-\n"); 
-    abort();                                              
-  } 
-  // LOCK(cpulock);  // I think there's a problem here. 
+  LOCK(elk);  
   c->regs[XIS_REG2(instruction)] = FETCH_WORD(c->regs[XIS_REG1(instruction)]);
-  if (pthread_mutex_unlock(&(cpulock))){ 
-    fprintf(LOG, "-=-= FAILURE TO RELEASE LOCK! =-=-\n"); 
-    abort(); 
-  } 
-  
-  //UNLOCK(cpulock);
+  UNLOCK(elk);
 }
 INSTRUCTION(stora){
-  // LOCK(cpulock);
-  if (pthread_mutex_lock(&(cpulock))){                   
-    fprintf(LOG, "-=-= FAILURE TO ACQUIRE LOCK! =-=-\n"); 
-    abort();                                              
-  }
+  LOCK(elk);
   c->memory[c->regs[XIS_REG2(instruction)] % MEMSIZE] =
     (unsigned char) ((c->regs[XIS_REG1(instruction)] >> 8));
   c->memory[(c->regs[XIS_REG2(instruction)]+1) % MEMSIZE] =
     (unsigned char) ((c->regs[XIS_REG1(instruction)]) & 0xFF);  
-  if (pthread_mutex_unlock(&(cpulock))){ 
-    fprintf(LOG, "-=-= FAILURE TO RELEASE LOCK! =-=-\n"); 
-    abort(); 
-  } 
- 
-  // UNLOCK(cpulock);
+  UNLOCK(elk);
 }
 INSTRUCTION(tnset){
-  //LOCK(cpulock);
-  if (pthread_mutex_lock(&(cpulock))){                   
-    fprintf(LOG, "-=-= FAILURE TO ACQUIRE LOCK! =-=-\n"); 
-    abort();                                              
-  }
+  LOCK(elk);
   c->regs[XIS_REG2(instruction)] = FETCH_WORD(c->regs[XIS_REG1(instruction)]);
   c->memory[c->regs[XIS_REG1(instruction)] % MEMSIZE] = 0;
   c->memory[(c->regs[XIS_REG1(instruction)]+1) % MEMSIZE] = 1;
-  if (pthread_mutex_unlock(&(cpulock))){ 
-    fprintf(LOG, "-=-= FAILURE TO RELEASE LOCK! =-=-\n"); 
-    abort(); 
-  } 
-  //UNLOCK(cpulock);
+  UNLOCK(elk);
 }
 
 /** That's all, folks! **/
-char *sign="\xde\xba\x5e\x12";
+char *sig="\xde\xba\x5e\x12";
