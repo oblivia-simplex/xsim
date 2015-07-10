@@ -1,0 +1,66 @@
+######################################################################
+# Test 1
+# Test the interrupt handler. Make sure that frequency-based interrupts
+# and trap interrupts are indeed calling different subroutines.
+######################################################################
+
+
+
+loadi stack, r15
+
+loadi int_tab, r0
+lit r0
+
+loadi int_hdlr, r1
+stor r1, r0
+
+inc r0
+inc r0
+
+loadi trap_hdlr, r1
+stor r1, r0
+
+xor r0, r0
+loadi 777, r1
+
+while:
+ inc r0
+ equ r0, r1
+ br dotrap
+ jr while
+
+dotrap:
+ trap
+ xor r0,r0
+ jr while
+ 
+
+
+.literal 0
+
+int_hdlr:
+  loadi 0x2d, r10
+  out r10
+  iret
+  .literal 0
+
+trap_hdlr:
+  cpuid r13
+  loadi 0x54, r11
+  add   r13, r11
+  out r11
+  loadi 0x52, r11
+  add   r13, r11
+  out r11
+  loadi 0x41, r11
+  out r11
+  loadi 0x50, r11
+  out r11
+  iret
+  .literal 0
+
+  .words 10
+stack:
+
+int_tab:
+  .words 4

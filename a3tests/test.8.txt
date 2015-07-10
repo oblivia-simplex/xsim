@@ -1,0 +1,91 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 8: Demonstration of mapbyte, using a
+#          couple simple cyphers.
+#          Now with threads!
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+This test is a retooling of the tenth test written for Assignment 1.
+
+On the hypothesis that the deadlocks experienced in Test 6 may have been
+the result of all threads sharing a common stack, I added an init_stacks
+subroutine at the beginning of the programme. This gives each of four CPUs
+their own stack space to work with. The programme makes extensive use of
+stack operations, and so this should be a good test of the multithreading
+functionality, and the locking mechanisms (again copied from kernel.xas).
+
+Every critical section in the code has been wrapped, generously, in a
+pair of calls to lock and unlock.
+
+Happily, this code ended up working perfectly. The expected output is below:
+
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Hello, world!
+Caesar cipher (with rot = 3): 
+Khoor/#zruog$
+Now rotating back (rot = -3): 
+Hello, world!
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Now let's try a xor encryption (with key = 'GOODBYE, ALL.'): 
+*#(-ue[O3 (
+Decrypting...
+Hello, world!
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+<CPU 0 has halted after 7001 cycles at PC = 0188 : 0000>
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Hello, world!
+Caesar cipher (with rot = 3): 
+Khoor/#zruog$
+Now rotating back (rot = -3): 
+Hello, world!
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Now let's try a xor encryption (with key = 'GOODBYE, ALL.'): 
+fKBBAYA\BJ
+Decrypting...
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Hello, world!
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+<CPU 1 has halted after 7105 cycles at PC = 0188 : 0000>
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Hello, world!
+Hello, world!
+Caesar cipher (with rot = 3): 
+Khoor/#zruog$
+Now rotating back (rot = -3): 
+Hello, world!
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Now let's try a xor encryption (with key = 'GOODBYE, ALL.'): 
+fKBBAYA\BJ
+Decrypting...
+Hello, world!
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Caesar cipher (with rot = 3): 
+
+<CPU 2 has halted after 9537 cycles at PC = 0188 : 0000>
+Khoor/#zruog$
+Now rotating back (rot = -3): 
+Hello, world!
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Now let's try a xor encryption (with key = 'GOODBYE, ALL.'): 
+fKBBAYA\BJ
+Decrypting...
+Hello, world!
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+<CPU 3 has halted after 14661 cycles at PC = 0188 : 0000>
+
+To Compile:
+
+This code requires the use of the stdio.xas library prepared for Assignment
+1, including the border and mapbyte functions that I wrote for it.
+
+../xas test.8.xas test.8.xo
+../xas stdio.xas stdio.xo
+../xld test.8.x test.8.xo stdio.xo
+
+To Run:
+
+../xmpsim 0 test.8.x 0 4
+

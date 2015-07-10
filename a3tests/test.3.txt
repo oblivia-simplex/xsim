@@ -1,0 +1,34 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 3: Testing the kernel locks
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
+The purpose of this test is to test the mutex locks used in the kernel. The
+code used to construct the locks was copied over directly from kernel.xas
+(and a disassembly of kernel_gold.xo confirms that more or less identical
+code was used in the gold version of the kernel -- the only real difference
+consisting in irrelevant permutations of instructions and register names).
+
+A successful test would be indicated by a series of 1000-character blocks,
+with each CPU using its own, assigned character (as in test 1), without any
+interleafing.
+
+The locks seem to be effective when four or fewer CPUs are used. However, if
+the number is increased -- to 26, say -- then we see a great deal of interleafing
+within each 1000-character chunk (which is, effectively, supposed to be treated
+as a critical section).
+
+This may indicate that the mutex locks used in the kernel are faulty -- something
+which may account for some (but not all) of the unpredictable behaviour in the
+xos and xos_bigtest tests. 
+
+To Compile:
+
+../xas test.3.xas test.3.xo
+
+To Run:
+
+../xmpsim 100000 test.3.xo 0 4
+
+../xmpsim 100000 test.3.xo 0 26
+

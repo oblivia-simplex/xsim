@@ -1,0 +1,5 @@
+
+
+To Run:
+
+for ob in  sim sim_gold; do for i in {0..4}; do ../xmp$ob 10000 test.4.xo 0 4 | grep ^0$i\> > test.4.t$i.$ob.out; done; done

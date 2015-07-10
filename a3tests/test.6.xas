@@ -1,0 +1,92 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 6: Lots of threads, doing thread-unsafe things, part 2: slightly safer. 
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+init_stacks:
+        loadi  stack0, r0
+        cpuid  r1
+        loadi  1024, r2
+        mul    r1, r2
+        add    r2, r0
+        mov    r0, r15
+
+  #std
+  loadi   scratch, r0
+  loadi   100, r4
+while:
+  cld
+  call    lock
+  #std
+  loadb   r0, r1
+  mov     r1, r2
+  inc     r1
+  storb   r1, r0
+  dec     r1
+  storb   r1, r0
+  out     r1
+  cld
+  call    unlock
+  #std
+  loadi   5000, r5
+fritter:
+  dec     r5
+  test    r5, r5
+  br      fritter
+  dec     r4
+  inc     r0
+  test    r4, r4
+  br      while
+
+
+.literal 0
+
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+lock:
+  push   r13
+  push   r12
+spinlock:
+  loadi  mutex, r13  # r13 now points to mutex variable
+  tnset  r13, r12    # test and set value of mutex<-1, store prev val in r12
+  test   r12, r12    # if mutex was already set, then another proc has locked it
+  br     spinlock    # so wait your turn
+  pop    r12         # restore registers
+  pop    r13         
+  ret                # that's all
+
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+unlock:
+  push     r13          # preserve registers
+  push     r12          
+  xor      r12, r12     # zero out r12
+  loadi    mutex, r13   # r13 now points to mutex
+  stora    r12, r13     # set mutex to 0, freeing the lock for others
+  pop      r12          # restore registers
+  pop      r13
+  ret 
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+.literal 0
+
+scratch:
+.literal "This is just some junk data, to kick things off. The details don't matter. The only important thing is that there are at least 100 characters here."
+
+mutex:
+.words 1
+
+
+stack0:
+.words 1024
+
+stack1:
+.words 1024
+
+stack2:
+.words 1024
+
+stack3:
+.words 1024

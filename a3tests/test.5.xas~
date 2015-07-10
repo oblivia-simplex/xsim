@@ -1,0 +1,24 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 5: Lots of threads, doing thread-unsafe things.
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
+  std
+  loadi   scratch, r0
+  loadi   100, r4
+while:
+  loadb   r0, r1
+  mov     r1, r2
+  inc     r1
+  storb   r1, r0
+  dec     r1
+  storb   r1, r0
+  dec     r4
+  test    r4, r4
+  br      while
+
+
+.literal 0
+
+scratch:
+.literal "This is just some junk data, to kick things off. The details don't matter. The only important thing is that there are at least 100 characters here."

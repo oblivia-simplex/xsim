@@ -1,0 +1,25 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 4: Lots of threads, doing threadsafe things
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+  std
+  loadi 1000, r0        # 1000 iterations
+  loadi 2343, r1
+  loadi 5, r2
+  loadi -666, r3
+  loadi 555, r4
+  loadi 0xAA, r5
+  loadi 0xBBB, r6
+while:
+  add   r2, r1
+  mul   r1, r3
+  div   r3, r4
+  shr   r4, r2
+  shl   r2, r2
+  sub   r5, r6
+  and   r6, r1
+  or    r1, r2
+  # =-=-=
+  test  r0, r0
+  br    while
+  

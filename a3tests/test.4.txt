@@ -1,0 +1,24 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 4: Lots of threads, doing threadsafe things
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+The purpose of this test is just to make sure that the basic numerical
+and boolean arithmetic operations are working properly, when executed
+concurrently on multiple threads. A series of meaningless operations
+are performed, while the std flag is set, and the outputs of xmpsim
+and xmpsim_gold are logged and compared.
+
+A small bug in the hardware handler for the subtract instruction was
+discovered in this way. It has been fixed.
+
+To Compile:
+
+../xas test.4.xas test.4.xo
+
+To Run:
+
+for ob in  sim sim_gold; do for i in {0..3}; do ../xmp$ob 10000 test.4.xo 0 4 | grep ^0$i\> > test.4.t$i.$ob.out; done; done
+
+To Compare:
+
+for i in {0..3}; do echo "comparing thread $i"; diff test.4.t$i.sim.out test.4.t$i.sim_gold.out; done

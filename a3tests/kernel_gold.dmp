@@ -1,0 +1,987 @@
+sti 	
+loadi 	0x0768, r15
+loadi 	0x0768, r0
+lit 	r0		# 0x0000
+cpuid 	r1		# 0x0000
+test 	r1,r1		# 0x0000, 0x0000
+br 	0x002c
+loadi 	0x0060, r1
+stor 	r1,r0		# 0x0000, 0x0000
+inc 	r0		# 0x0000
+inc 	r0		# 0x0000
+loadi 	0x0124, r1
+stor 	r1,r0		# 0x0000, 0x0000
+inc 	r0		# 0x0000
+inc 	r0		# 0x0000
+loadi 	0x014c, r1
+stor 	r1,r0		# 0x0000, 0x0000
+call 	0x017e
+loadi 	0x077c, r0
+loadi 	0x0001, r1
+stor 	r1,r0		# 0x0000, 0x0000
+jr 	0x000e
+loadi 	0x077c, r0
+loada 	r0,r2		# 0x0000, 0x0000
+equ 	r1,r2		# 0x0000, 0x0000
+br 	0x0004
+jr 	0x00fa
+call 	0x021c
+mov 	r0,r15		# 0x0000, 0x0000
+cpuid 	r0		# 0x0000
+inc 	r0		# 0x0000
+loadi 	0x077c, r1
+stora 	r0,r1		# 0x0000, 0x0000
+call 	0x0298
+jmp 	0x00d4
+push 	r0		# 0x0000
+call 	0x02bc
+push 	r0		# 0x0000
+push 	r1		# 0x0000
+loadi 	0x0008, r1
+add 	r1,r0		# 0x0000, 0x0000
+loadi 	0x0002, r1
+stor 	r2,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r3,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r4,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r5,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r6,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r7,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r8,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r9,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r10,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r11,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r12,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r13,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+stor 	r14,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+mov 	r0,r2		# 0x0000, 0x0000
+mov 	r1,r3		# 0x0000, 0x0000
+pop 	r1		# 0x0000
+pop 	r4		# 0x0000
+pop 	r0		# 0x0000
+stor 	r15,r2		# 0x0000, 0x0000
+add 	r3,r4		# 0x0000, 0x0000
+add 	r3,r4		# 0x0000, 0x0000
+stor 	r0,r4		# 0x0000, 0x0000
+add 	r3,r4		# 0x0000, 0x0000
+stor 	r1,r4		# 0x0000, 0x0000
+call 	0x024a
+mov 	r0,r15		# 0x0000, 0x0000
+call 	0x02bc
+push 	r0		# 0x0000
+call 	0x02fe
+pop 	r0		# 0x0000
+call 	0x0298
+call 	0x02bc
+loadi 	0x0022, r1
+add 	r1,r0		# 0x0000, 0x0000
+load 	r0,r15		# 0x0000, 0x0000
+loadi 	0x0002, r1
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r14		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r13		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r12		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r11		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r10		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r9		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r8		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r7		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r6		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r5		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r4		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r3		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r2		# 0x0000, 0x0000
+sub 	r1,r0		# 0x0000, 0x0000
+load 	r0,r1		# 0x0000, 0x0000
+dec 	r0		# 0x0000
+dec 	r0		# 0x0000
+load 	r0,r0		# 0x0000, 0x0000
+iret 	
+push 	r0		# 0x0000
+push 	r1		# 0x0000
+mov 	r15,r1		# 0x0000, 0x0000
+call 	0x024a
+mov 	r0,r15		# 0x0000, 0x0000
+push 	r1		# 0x0000
+loadi 	0x0008, r0
+add 	r0,r1		# 0x0000, 0x0000
+load 	r1,r1		# 0x0000, 0x0000
+push 	r1		# 0x0000
+call 	0x014e
+pop 	r1		# 0x0000
+pop 	r1		# 0x0000
+mov 	r1,r15		# 0x0000, 0x0000
+pop 	r1		# 0x0000
+pop 	r0		# 0x0000
+iret 	
+iret 	
+push 	r0		# 0x0000
+push 	r1		# 0x0000
+mov 	r15,r1		# 0x0000, 0x0000
+loadi 	0x0006, r0
+add 	r0,r1		# 0x0000, 0x0000
+load 	r1,r0		# 0x0000, 0x0000
+call 	0x0342
+loadb 	r0,r1		# 0x0000, 0x0000
+test 	r1,r1		# 0x0000, 0x0000
+br 	0x0004
+jr 	0x0008
+out 	r1		# 0x0000
+inc 	r0		# 0x0000
+jr 	0x00f4
+loadi 	0x000a, r1
+out 	r1		# 0x0000
+call 	0x0356
+pop 	r1		# 0x0000
+pop 	r0		# 0x0000
+ret 	
+push 	r0		# 0x0000
+push 	r1		# 0x0000
+push 	r2		# 0x0000
+push 	r3		# 0x0000
+push 	r4		# 0x0000
+push 	r5		# 0x0000
+push 	r6		# 0x0000
+push 	r7		# 0x0000
+call 	0x0266
+loadi 	0x0770, r1
+load 	r1,r2		# 0x0000, 0x0000
+loadi 	0x077a, r3
+stor 	r2,r3		# 0x0000, 0x0000
+mov 	r2,r4		# 0x0000, 0x0000
+loadi 	0x0024, r3
+mov 	r3,r5		# 0x0000, 0x0000
+mul 	r0,r3		# 0x0000, 0x0000
+add 	r3,r2		# 0x0000, 0x0000
+loadi 	0x0778, r3
+stor 	r2,r3		# 0x0000, 0x0000
+mov 	r2,r6		# 0x0000, 0x0000
+loadi 	0x0400, r3
+mov 	r3,r7		# 0x0000, 0x0000
+mul 	r0,r3		# 0x0000, 0x0000
+add 	r3,r2		# 0x0000, 0x0000
+stor 	r2,r1		# 0x0000, 0x0000
+cpunum 	r3		# 0x0000
+add 	r3,r3		# 0x0000, 0x0000
+add 	r3,r3		# 0x0000, 0x0000
+add 	r2,r3		# 0x0000, 0x0000
+stor 	r3,r1		# 0x0000, 0x0000
+loadi 	0x0780, r1
+stor 	r2,r1		# 0x0000, 0x0000
+xor 	r1,r1		# 0x0000, 0x0000
+loadi 	0x0782, r2
+add 	r7,r6		# 0x0000, 0x0000
+dec 	r6		# 0x0000
+dec 	r6		# 0x0000
+dec 	r6		# 0x0000
+dec 	r6		# 0x0000
+push 	r4		# 0x0000
+call 	0x02fe
+pop 	r4		# 0x0000
+load 	r2,r3		# 0x0000, 0x0000
+stor 	r3,r6		# 0x0000, 0x0000
+inc 	r2		# 0x0000
+inc 	r2		# 0x0000
+inc 	r4		# 0x0000
+inc 	r4		# 0x0000
+stor 	r1,r4		# 0x0000, 0x0000
+loadi 	0x0020, r3
+add 	r3,r4		# 0x0000, 0x0000
+stor 	r6,r4		# 0x0000, 0x0000
+inc 	r4		# 0x0000
+inc 	r4		# 0x0000
+add 	r7,r6		# 0x0000, 0x0000
+inc 	r1		# 0x0000
+equ 	r1,r0		# 0x0000, 0x0000
+br 	0x0004
+jr 	0x00d6
+pop 	r7		# 0x0000
+pop 	r6		# 0x0000
+pop 	r5		# 0x0000
+pop 	r4		# 0x0000
+pop 	r3		# 0x0000
+pop 	r2		# 0x0000
+pop 	r1		# 0x0000
+pop 	r0		# 0x0000
+ret 	
+push 	r1		# 0x0000
+push 	r2		# 0x0000
+loadi 	0x0770, r1
+load 	r1,r0		# 0x0000, 0x0000
+loadi 	0x0200, r2
+add 	r2,r0		# 0x0000, 0x0000
+stor 	r0,r1		# 0x0000, 0x0000
+loadi 	0x0780, r1
+load 	r1,r1		# 0x0000, 0x0000
+cpuid 	r2		# 0x0000
+add 	r2,r2		# 0x0000, 0x0000
+add 	r2,r2		# 0x0000, 0x0000
+add 	r2,r1		# 0x0000, 0x0000
+loadi 	0x0002, r2
+add 	r2,r1		# 0x0000, 0x0000
+stor 	r0,r1		# 0x0000, 0x0000
+pop 	r2		# 0x0000
+pop 	r1		# 0x0000
+ret 	
+push 	r1		# 0x0000
+loadi 	0x0780, r1
+load 	r1,r1		# 0x0000, 0x0000
+cpuid 	r0		# 0x0000
+add 	r0,r0		# 0x0000, 0x0000
+add 	r0,r0		# 0x0000, 0x0000
+add 	r0,r1		# 0x0000, 0x0000
+loadi 	0x0002, r0
+add 	r0,r1		# 0x0000, 0x0000
+load 	r1,r0		# 0x0000, 0x0000
+pop 	r1		# 0x0000
+ret 	
+push 	r1		# 0x0000
+push 	r2		# 0x0000
+push 	r3		# 0x0000
+xor 	r0,r0		# 0x0000, 0x0000
+loadi 	0x0770, r3
+loadi 	0x0782, r1
+inc 	r0		# 0x0000
+stor 	r2,r3		# 0x0000, 0x0000
+load 	r1,r2		# 0x0000, 0x0000
+inc 	r1		# 0x0000
+inc 	r1		# 0x0000
+inc 	r2		# 0x0000
+test 	r2,r2		# 0x0000, 0x0000
+br 	0x00f2
+dec 	r0		# 0x0000
+dec 	r0		# 0x0000
+loadi 	0x0772, r3
+stor 	r0,r3		# 0x0000, 0x0000
+pop 	r3		# 0x0000
+pop 	r2		# 0x0000
+pop 	r1		# 0x0000
+ret 	
+push 	r0		# 0x0000
+push 	r1		# 0x0000
+cpuid 	r1		# 0x0000
+add 	r1,r1		# 0x0000, 0x0000
+add 	r1,r1		# 0x0000, 0x0000
+loadi 	0x0780, r0
+load 	r0,r0		# 0x0000, 0x0000
+add 	r0,r1		# 0x0000, 0x0000
+call 	0x02d2
+test 	r0,r0		# 0x0000, 0x0000
+br 	0x0004
+jr 	0x00f8
+stor 	r0,r1		# 0x0000, 0x0000
+pop 	r1		# 0x0000
+pop 	r0		# 0x0000
+ret 	
+push 	r1		# 0x0000
+cpuid 	r1		# 0x0000
+add 	r1,r1		# 0x0000, 0x0000
+add 	r1,r1		# 0x0000, 0x0000
+loadi 	0x0780, r0
+load 	r0,r0		# 0x0000, 0x0000
+add 	r1,r0		# 0x0000, 0x0000
+load 	r0,r0		# 0x0000, 0x0000
+pop 	r1		# 0x0000
+ret 	
+push 	r1		# 0x0000
+call 	0x0342
+loadi 	0x0774, r1
+load 	r1,r0		# 0x0000, 0x0000
+push 	r0		# 0x0000
+test 	r0,r0		# 0x0000, 0x0000
+br 	0x0004
+jr 	0x0010
+load 	r0,r0		# 0x0000, 0x0000
+stor 	r0,r1		# 0x0000, 0x0000
+test 	r0,r0		# 0x0000, 0x0000
+br 	0x0008
+loadi 	0x0776, r1
+stor 	r0,r1		# 0x0000, 0x0000
+call 	0x0356
+pop 	r0		# 0x0000
+pop 	r1		# 0x0000
+ret 	
+push 	r0		# 0x0000
+push 	r1		# 0x0000
+mov 	r15,r0		# 0x0000, 0x0000
+loadi 	0x0006, r1
+add 	r1,r0		# 0x0000, 0x0000
+load 	r0,r0		# 0x0000, 0x0000
+xor 	r1,r1		# 0x0000, 0x0000
+stor 	r1,r0		# 0x0000, 0x0000
+push 	r0		# 0x0000
+call 	0x0342
+loadi 	0x0776, r1
+load 	r1,r0		# 0x0000, 0x0000
+test 	r0,r0		# 0x0000, 0x0000
+pop 	r0		# 0x0000
+br 	0x000e
+push 	r1		# 0x0000
+loadi 	0x0774, r1
+stor 	r0,r1		# 0x0000, 0x0000
+pop 	r1		# 0x0000
+jr 	0x000a
+push 	r1		# 0x0000
+load 	r1,r1		# 0x0000, 0x0000
+stor 	r0,r1		# 0x0000, 0x0000
+pop 	r1		# 0x0000
+stor 	r0,r1		# 0x0000, 0x0000
+call 	0x0356
+pop 	r1		# 0x0000
+pop 	r0		# 0x0000
+ret 	
+push 	r0		# 0x0000
+push 	r1		# 0x0000
+loadi 	0x077e, r1
+tnset 	r1,r0		# 0x0000, 0x0000
+test 	r0,r0		# 0x0000, 0x0000
+br 	0x00fc
+pop 	r1		# 0x0000
+pop 	r0		# 0x0000
+ret 	
+push 	r0		# 0x0000
+push 	r1		# 0x0000
+loadi 	0x077e, r1
+xor 	r0,r0		# 0x0000, 0x0000
+stora 	r0,r1		# 0x0000, 0x0000
+pop 	r1		# 0x0000
+pop 	r0		# 0x0000
+ret 	
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0000]
+# (null)    [0024]
+# (null)    [0000]
+# (null)    [0000]
+cli 	
+# (null)    [0000]
+# (unknown) [0810]
+# (null)    [0000]
+# (unknown) [1410]
+# (null)    [0000]
+# (unknown) [1e10]
+# (null)    [0000]
+# (unknown) [2810]
+# (null)    [0000]
+# (unknown) [2e10]
+# (null)    [0000]
+# (unknown) [3210]
+# (null)    [0000]
+# (unknown) [3e10]
+# (null)    [0000]
+# (unknown) [5410]
+# (null)    [0000]
+lit 	r1		# 0x0000
+# (null)    [0000]
+# (unknown) [5a10]
+# (null)    [0000]
+# (unknown) [d210]
+# (unknown) [5e10]
+# (null)    [0000]
+# (unknown) [6410]
+# (null)    [0000]
+# (unknown) [c610]
+# (unknown) [d610]
+# (unknown) [c010]
+# (unknown) [2c10]
+# (null)    [0000]
+# (unknown) [cc10]
+# (unknown) [e210]
+# (unknown) [3e10]
+# (null)    [0001]
+# (unknown) [5e10]
+# (null)    [0002]
+# (unknown) [d610]
+# (unknown) [1410]
+# (null)    [0001]
+# (unknown) [7610]
+# (null)    [0002]
+# (unknown) [f610]
+# (unknown) [3a10]
+# (null)    [0001]
+loadb 	r1,r0		# 0x0000, 0x0000
+# (null)    [0001]
+tnset 	r1,r0		# 0x0000, 0x0000
+# (null)    [0002]
+# (unknown) [2210]
+# (null)    [0002]
+# (unknown) [7010]
+# (null)    [0001]
+# (unknown) [9a10]
+# (null)    [0001]
+# (unknown) [ac10]
+# (null)    [0001]
+# (unknown) [ca10]
+# (unknown) [3010]
+# (null)    [0002]
+# (unknown) [4e10]
+# (null)    [0002]
+# (unknown) [a410]
+# (null)    [0002]
+# (unknown) [c610]
+# (unknown) [d210]
+# (unknown) [7410]
+# (null)    [0002]
+equ 	r1,r0		# 0x0000, 0x0000
+# (null)    [0002]
+# (unknown) [ac10]
+# (null)    [0002]
+# (unknown) [da10]
+# (unknown) [2610]
+# (null)    [0002]
+# (unknown) [f010]
+# (unknown) [1810]
+# (null)    [0003]
+inc 	r1		# 0x0000
+# (null)    [0003]
+# (unknown) [5c10]
+# (null)    [00ff]
+# (unknown) [ff00]
+ret 	
+# (unknown) [c8dd]
