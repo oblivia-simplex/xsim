@@ -49,6 +49,8 @@ main:
         loadi  target, r0        
         loadi  14, r2
         loadi  3, r3    # ROT value ==> FPARAM
+        cpuid  r9
+        add    r9, r3   # INCREASE ROT VALUE BY CPUID
         loadi  rot, r4  # FPTR value 
         push   r2       # LEN
         push   r1       # SRC
@@ -271,12 +273,13 @@ mutex:
 #padding
 .words 40
 
+
 hellostr:
 .literal "Hello, world!"
 caesarintro:
-.literal "Caesar cipher (with rot = 3): "
+.literal "Caesar cipher (with rot=3+id): "
 caesaroutro:
-.literal "Now rotating back (rot = -3): "
+.literal "Now rotating back (rot=-3-id): "
 xorintro:                                            #Hello, world!
 .literal "Now let's try a xor encryption (with key = 'GOODBYE, ALL.'): "
 xorkey:
@@ -292,7 +295,7 @@ scratchpad:
 
 # padding:
 
-
+.words 1000
 .words 8000
 stack_space:
 

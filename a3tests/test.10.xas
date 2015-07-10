@@ -1,0 +1,63 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 10: Each CPU has its own interrupt table
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
+loadi int_tables, r0
+cpuid r1
+loadi 4, r2
+mul   r2, r1
+add   r1, r0
+lit   r0
+
+loadi int_hdlr, r1
+stor  r1, r0
+
+inc r0
+inc r0
+
+loadi trap_hdlr, r1
+stor  r1, r0
+
+
+xor r0, r0
+loadi 777, r1
+
+while:
+ inc r0
+ equ r0, r1
+ br dotrap
+ jr while
+
+dotrap:
+ trap
+ xor r0,r0
+ jr while
+ 
+
+
+.literal 0
+
+int_hdlr:               # each interrupt prints an uppercase letter
+  loadi 0x61, r10
+  cpuid r9
+  add   r9, r10
+  out r10
+  iret
+  .literal 0
+
+trap_hdlr:              # each trap prints a lowercase letter
+  loadi 0x41, r10
+  cpuid r9
+  add   r9, r10
+  out   r10
+  iret
+  .literal 0
+
+
+
+
+int_tables:
+.words 120
+
+

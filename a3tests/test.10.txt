@@ -1,0 +1,29 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 10: Each CPU maintains its own interrupt table.
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+In this test, each CPU maintains its own interrupt table. The interrupt and
+trap subroutines, themselves, do not differ between the various CPUs (though
+this would be simple enough to implement), but the table itself -- the pointer
+stored in ITR -- does differ.
+
+When a frequency-based interrupt occurs, an uppercase letter is printed to
+stdout. When a trap interrupt occurs, the corresponding lowercase letter
+is printed.
+
+The letter printed is dependent on the value of CPUID: each CPU prints the
+nth letter in a trap or interrupt, where n = CPUID+1.
+
+This programme has no difficulty running on 26 different CPUs (after 26, we
+just run out of letters to use, and shortly afterwards, we run out of
+room in our interrupt table; after 40, CentosOS begins to object).
+
+To Compile:
+
+../xas test.10.xas test.10.xo
+
+To Run:
+
+../xmpsim 100000 test.10.xo 1000 26
+
+xmpsim_gold seems to handle this test quite well, too. 

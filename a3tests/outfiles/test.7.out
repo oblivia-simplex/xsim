@@ -1,0 +1,17 @@
+
+<CPU ran 0 out of time after 100000 cycles at PC = 0024 : 6104>
+
+<CPU ran 7 out of time after 100000 cycles at PC = 0020 : 4800>
+
+<CPU ran 3 out of time after 100000 cycles at PC = 0020 : 4800>
+
+<CPU ran 4 out of time after 100000 cycles at PC = 0022 : 8c01>
+
+<CPU ran 1 out of time after 100000 cycles at PC = 0026 : 62fa>
+
+<CPU ran 5 out of time after 100000 cycles at PC = 0026 : 62fa>
+
+<CPU ran 6 out of time after 100000 cycles at PC = 0024 : 6104>
+
+<CPU ran 2 out of time after 100000 cycles at PC = 0022 : 8c01>
+-a-a-aTRAP-a-a-aTRAP-a-a-aTRAP-a-a-aTRAP-a-a-aTRAP-a-a-aTRAP-a-a-a-aTRAP-a-a-aTRAP-a-a-aTRAP-a-a-aTRAP-a-a-aTRAP-a-a-aTRAP-a-a-aTRAP-a-a-a-aTRAP-a-a-aTRAP-a-a-aTRAP-a-a-aTRAP-a-a-aTRAP-a-a-aTRAP-a-a-aTRAP-a-a-a-aTRAP-a-a-d-aTRAP-d-e-a-dWUDS-e-a-d-e-aXVETTRAP-d-e-a-dWUDS-e-a-d-e-aXVETTR-dAP-e-a-d-eWUDS-a-d-e-aXVET-d-e-a-d-e-WaUDS-d-e-aXVET-d-e-a-d-e-aWUDTRSAP-d-a-e-aXVET-d-e-aTRAP-a-e-d-a-e-aWUDS-b-d-TRAcPXVET--ah-e-h-a-d-h[YHW-e-h-a-hTRAP-h-d[YHW-a-e-h-h-a-b-h-eXVET-dW[YHUWDS-a-h-c-hTRAP-a-e-h-[YdHW-h-a-h-e-a-h-d[YHW-hTRAP-a-e-hXVET-h-b[YHWUSBQ-h-d-e-h-h-h[YHW-e-dWUDS-b-h-c-h-e-h[YHW-dXVET-h-h-e-b-h[YHW-d-h-h-e-h[YHW-d-h-b-eWUDS-hUSBQ-hXVET[YHW-h-d-e-h-b-h[YHW-h-e-c-d-h-hVTCR-[eYHW-h-b-d-h-hWUDS-e-h[YHW-h-d-h-b-e-h[YHW-hUSBQ-d-h-eXVET-h[YHW-b-h-d-e-h-h-c[YHWWUDS-h-e-d-h-b-h[YHW--heXVET-h-d-e-b-h-d-eUSBQ[YHW-gWUDS-h-e-d-bXVET-h-c-d-e-b-g-h-d[YHW-b-hWUDS-d-e-fUSBQ-h-d-b-h-g-e-dZXGV-b--hc[YHWXVET-dWUDS-e-h--fbVTCR-d-h-gUSBQ--de-b-h[YHW-dWUDS-h-b-e--fc-d--ghYWFU-b-XdVET-h[YHW-e-bUSBQ-d-hWUDS-h-f-d-g-b-e-hZXGV-d-c[YHW-b-h-d-eWUDS-h-b-d-gUSBQ-f-h-e-d-b[YHW-h-d-b--WhUeDS-g-c-d-f-h-b-dUSBQ[YHW-eYWFU-h-d-b-h-g-e-d-h-b-f-d[YHW-h-c-e-b-d-hUSBQ-g-d-bZXGV-hZXGV-e-f-d-h[YHW-b-h--de-c-g-bVT-ChR-d-eUSBQ-h-f-d[YHW-b-h-d-eYWFU-g-b-h-d-c-h-e-d-b[YHW-f-h-dUSBQ-b-g-h-e-dZXGV-h-b-d[YHW-e-f-h-d-c-b-g-h-d-eUSBQ-b-d-g-f-b-e-d-g-dZXGV-bYWFU-c-e-g-d-bUSBQ-f-d-g-e-b-d-g-d-ZbXGVZXGV-e-g-d-f-c-bUSBQ-g-d-e-b-g-dZXGV-b-d-g-e-f-d--gbUSBQ-c-d-e-g-bYWFU-dZXG-Vf-g-e-b-d--dg-b-e-dUSBQ-g-c-b-f-d-g-e-d-b-g-d-b-e-g-d-fUSBQ-b--dc-g-e-d-g-bYWFU-e-f-g-b-e-c-gUSBQ-e-b-f-e-g-c-b-e-g--ef-b-c-g-eUSBQ-b-g-e-fYWFU-c-e-b-g-e-g--bc-f-e-g-e-bUSBQ-c-e-g-f-b-e-g-e-c-b-f-g-eYWFU-b-g-eUSBQ-c-e-f-b-g-e-c-g-b-e-f-g-e-b-cUSBQ-g-e-b-fYWFU-g-c-f-b-f-g-f-cYWFU-f-b-f-gUSBQ-c-fYWFU-b-f-g-f-c-f-bYWFU-f-g-f-c-b-f-gYWFU-fUSBQ-c-f-b-f-g-fYWFU-c-b-f-g-f-fYWFU-c-b-f-g-fUSBQ-c-b-fYWFU-g-f-f-c-b-f-gYWFU-f-f--bc-g-fYWFU-fUSBQ-b-c-f-g-fYWFU-f-b-c-g-f-f-b-cYWF-Ug-f-f-g-b-fUSBQ-c--fg-b-c-f-g-b-fYWFU-g-c-f-b-gUSBQ-f-c-g-b-fYWFU-c-f-g-b-f-g-c-b-fYWFU-gUSBQ-f-c-b-g-f-c--fg-bYWFU-f-g-c-b-f-gUSBQ-f-c-b-gYWFU-f-g-b-c-f-g-f-c-cYWFU-f-c-g-c-c-f-c-g-c-f-c-c-g-c-fYWFU-c-c-g--cf-c-c-g-f-c-c-f-cYWFU-gYWFU-c-c-f-c-g-c-f-c-c-g-c-f-cYWFU-c-g-fZXGV-c-c-c-f-g-c-c-f-c-gYWFU-c-c-f-c-g-cZ-XGVf-c-c-g-c-f-cYWFU-c-g-c-g-g-c-g-g-c

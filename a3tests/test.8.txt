@@ -16,6 +16,9 @@ functionality, and the locking mechanisms (again copied from kernel.xas).
 Every critical section in the code has been wrapped, generously, in a
 pair of calls to lock and unlock.
 
+As an additional modification, I've set the rotation for the Caesar cypher
+to be 3+CPUID, so that each CPU produces a slightly different cypher. 
+
 Happily, this code ended up working perfectly. The expected output is below:
 
 

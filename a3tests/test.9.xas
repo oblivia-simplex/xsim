@@ -1,0 +1,84 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 9
+# Push some information onto the stack during a trap call, and then
+# retrieve it outside the trap. Have each CPU maintain its own stack. 
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+init_stacks:
+        loadi  stack_space, r0
+        cpuid  r1
+        test   r1, r1
+        br     carve_stack
+        jr     assign_stack
+carve_stack:
+        loadi  8000, r2
+        div    r1, r2
+        mul    r1, r2
+        sub    r2, r0
+assign_stack:
+        mov    r0, r15
+
+
+loadi int_tab, r0
+lit r0
+
+loadi int_hdlr, r1
+stor r1, r0
+
+inc r0
+inc r0
+
+loadi trap_hdlr, r1
+stor r1, r0
+cld
+
+trap
+
+loadi 12, r0
+sub r0, r15
+
+pop r1          # now try to print the message on the stack
+out r1
+pop r1
+out r1
+pop r1
+out r1
+pop r1
+out r1
+loadi  0x20, r1
+out    r1
+cpuid  r6
+loadi  0x61, r1
+add    r6, r1
+out    r1
+loadi 0x0a, r1
+out r1
+.literal 0
+
+
+int_hdlr:
+  loadi 0x2d, r10
+  out r10
+  iret
+  .literal 0
+
+trap_hdlr:
+  mov r15, r14
+  loadi 0x54, r11
+  push r11
+  loadi 0x52, r11
+  push r11
+  loadi 0x41, r11
+  push r11
+  loadi 0x50, r11
+  push r11
+  mov r14, r15
+  iret
+  .literal 0
+
+  .words 1000 
+  .words 10000
+stack_space:
+
+int_tab:
+  .words 4

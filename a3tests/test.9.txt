@@ -1,0 +1,42 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 9
+# Push some information onto the stack during a trap call, and then
+# retrieve it outside the trap. Do this on multiple concurrent threads.
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+This test experiments with the use of the stack inside a trap call.
+We want to see if information pushed onto the stack inside a trap can
+be retrieved from the main body of the code.
+
+This is similar to Test 5 for Assignment 2, except that now it has been
+modified to run on multiple CPUs, with each CPU maintaining its own
+stack. 
+
+Inside the trap, we push a few characters onto the stack -- 'T', 'R',
+'A', and 'P' -- then retore the stack pointer to its position before
+this pushing began, and exit the trap with iret.
+
+After the trap call in the body of the code, we add 12 to the stack
+pointer and then pop the characters off the stack in reverse order,
+and print them to stdout with the out instruction. We then output a
+space character (0x20), followed by a lowercase letter equal to 0x61
++ CPUID. The output is then terminated with a newline (0x0a). 
+
+If everything goes as planned, the output should be:
+
+PART $LETTER
+
+where $LETTER == 0x61+CPUID
+
+
+This test seems to execute without any problems at all.
+
+To Compile:
+
+../xas test.9.xas test.9.xo
+
+To Run:
+
+../xmpsim 0 test.9.x 1000 8
+
+
