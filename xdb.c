@@ -1,12 +1,13 @@
-#ifndef XCPU
-#define XCPU
-#include "xcpu.c"
-#endif
-char prchar(char c);
-void xdumper(xcpu *c, int enumerate);
-void disas(xcpu *c);
-char ** build_disas_table(void);
-void xcpu_pretty_print(xcpu *c);
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <assert.h>
+#include <unistd.h>
+#include <pthread.h>
+
+#include "xis.h"
+#include "xcpu.h"
 
 
 /************************************************************************
@@ -83,7 +84,7 @@ void disas(xcpu *c){
  * during live debugging, or called in a loop from the xdump utility, to
  * disassemble the object code from start to finish (similar to objdump). 
  *************************************************************************/
-void xdumper(xcpu *c, int enumerate){
+extern void xdumper(xcpu *c, int enumerate){
   unsigned char opcode = (unsigned char)(( (FETCH_WORD(c->pc)) >> 8) & 0x00FF);
   if (enumerate)
     fprintf(LOG, "%4.4x>   ", c->pc);
@@ -160,6 +161,6 @@ void xcpu_pretty_print(xcpu *c){
 
   if( pthread_mutex_unlock( &lk ) ) {
     fprintf(LOG, "*** Failure to release lock! ***\n" );
-    abort();
+    exit(EXIT_FAILURE);
   }
 }

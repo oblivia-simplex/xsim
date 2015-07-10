@@ -2,8 +2,12 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <pthread.h> // check for multiple def errors
 #include <assert.h>
+#include "xcpu.h"
+#include "xdb.h"
+
 /**
  * MOREDEBUG turns on a host of helpful debugging features, which I 
  * gradually pieced together for my own benefit, in trying to get 
@@ -46,49 +50,24 @@
 #define DEFAULT_INTERRUPT 0
 #define DEFAULT_CYCLES 0
 
-// Global xmpsim lock variable, "execution lock". 
-static pthread_mutex_t elk = PTHREAD_MUTEX_INITIALIZER; 
-
-#define LOCK(lockname) \
-  if (pthread_mutex_lock(&(lockname))){ \
-    fprintf(LOG, "-=-= FAILURE TO ACQUIRE LOCK! =-=-\n"); \
-    abort();\
-  } 
-
-#define UNLOCK(lockname) \
-  if (pthread_mutex_unlock(&(lockname))){ \
-    fprintf(LOG, "-=-= FAILURE TO RELEASE LOCK! =-=-\n"); \
-    abort(); \
-  } 
-
-
-#define HANDLE_ERROR(msg) \
-  perror(msg); \
-  exit(EXIT_FAILURE);
-
-
-//////////////////////////////////////////////////////////////////////
-#include "xcpu.c"
-//#include "xcpu.h"
-#include "xdb.c"
-//////////////////////////////////////////////////////////////////////
-
 void init_cpu(xcpu *c);
 FILE* load_file(char *filename);
 int load_programme(unsigned char *mem, FILE *fd);
 void shutdown(xcpu *c);
 static void * execution_loop(void *);
 
-/** build the jump table of instruction-function pointers **/
+/** GLOBAL VARIABLES (NECESSARY EVILS) **/
+
+// build the jump table of instruction-function pointers 
 IHandler *table;
-/** some global integer variables **/
 int cycles, interrupt_freq, cpu_num;
 
-unsigned char *mem;
+// The memory to be shared among all CPUs/threads. 
+unsigned char *mem; 
 
+/***************************************************************************/
 
 int main(int argc, char *argv[]){
-  
   // parse command-line options
   cycles = (argc >= CYCLE_ARG+2)? atoi(argv[CYCLE_ARG]) : DEFAULT_CYCLES;
   interrupt_freq = (argc >= INTERRUPT_ARG+1)? atoi(argv[INTERRUPT_ARG])
@@ -109,6 +88,7 @@ int main(int argc, char *argv[]){
     fprintf(LOG,"\nHit <ENTER> to continue...\n");
     getchar();
   }
+
   FILE *fd= (argc >= IMAGE_ARG+1)? load_file(argv[IMAGE_ARG]) :
     load_file(argv[IMAGE_ARG-1]);
 
@@ -119,24 +99,22 @@ int main(int argc, char *argv[]){
   table = build_jump_table();
   //xcpu c[cpu_num];
   xcpu * c;
-  c = (xcpu *) malloc(sizeof(xcpu) * cpu_num);
+  c = (xcpu *) calloc(cpu_num, sizeof(xcpu));
   mem = calloc(MEMSIZE, sizeof(unsigned char));
   load_programme(mem, fd);
 
   pthread_t threads[cpu_num];
   int tsignal;  
-  int u,i;
+  int u;
 
+  /** Now initialize each CPU, in sequence. **/
   for (u = 0; u < cpu_num; u++){
     c[u].memory = mem;
     c[u].num = cpu_num;
     c[u].id = u;
-    c[u].pc = 0;
-    c[u].itr = 0;
-    c[u].state = 0;
-    for(i=0; i < X_MAX_REGS; c[u].regs[i++]=0) 
-      ; 
     }
+
+  /** Now spin the threads. Each CPU gets one. **/
   for (u = 0; u < cpu_num; u++){
     if (pthread_create(&threads[u], NULL, execution_loop, (void *) (c+u))){
       fprintf(stderr, "Thread %d not okay. Error signal: %d\n", u, tsignal);
@@ -144,6 +122,7 @@ int main(int argc, char *argv[]){
     }
   }
 
+  /** Wait for the threads to come home. **/
   int join_count = 0;
   for (u = cpu_num-1; u >= 0; u--){
     join_count += !pthread_join(threads[u], NULL);
@@ -176,29 +155,25 @@ static void * execution_loop(void * cpu){ // expects pointer to an xcpu struct
     i[j]=0;
     halted[j] = 0;
   }
+
   int oldpc[c->num]; // holds previous programme counter
   
   while ( i[c->id] < cycles || !cycles){
-     if (MOREDEBUG == c->id || MOREDEBUG == -1)
-       fprintf(LOG, "<CYCLE %d> <CPU %d>\n",i[c->id]-1,c->id);
-     
+     if (MOREDEBUG == -1 || MOREDEBUG == c->id)
+       fprintf(LOG, "<CYCLE %d> <CPU %d>\n",i[c->id],c->id);
+     // if not in 1st cycle, & interrupts are set, then interrupt periodically
     if (i[c->id] != 0 && interrupt_freq != 0 && i[c->id] % interrupt_freq == 0){
-      // if not in 1st cycle, & interrupts are set, then interrupt periodically
-      //LOCK(elk);
       if (!xcpu_exception(c, X_E_INTR)){
-        
         fprintf(stderr, "Exception error at 0x%4.4x. CPU has halted.\n",
                 c->pc);
-        // terminate thread? pthread_exit(NULL)?
         return NULL;
       }
-      //UNLOCK(elk);
     }
+    
     oldpc[c->id] = c->pc; // save current instruction for error reporting
 
-    /**
-     * Now, call xcpu_execute function to perform the instruction at c->pc.
-     **/
+    // Now, call xcpu_execute function to perform the instruction at c->pc.
+
     halted[c->id] = !xcpu_execute(c,table); 
        
     if (MOREDEBUG == c->id || MOREDEBUG == -1){
@@ -233,8 +208,9 @@ FILE* load_file(char* filename){
  **************************************************************************/
 int load_programme(unsigned char *mem, FILE *fd){
   unsigned int addr = 0;
-  do
+  do{
     mem[addr++] = fgetc(fd);
+  }
   while (!feof(fd) && addr < MEMSIZE);
   fclose(fd);
   if (addr >= MEMSIZE){
@@ -245,17 +221,7 @@ int load_programme(unsigned char *mem, FILE *fd){
   }
   return addr;
 }
-/*
-void init_cpu(xcpu *c){
-  c->memory = calloc(MEMSIZE, sizeof(unsigned char));
-  unsigned char i = 0;
-  for(i=0; i < X_MAX_REGS; c->regs[i++]=0) // registers will need to be on the stack
-    ;                             // so that each thread can maintain its own
-  c->pc     = 0x0;
-  c->state  = 0x0;
-  c->itr    = 0x0;
-}
-*/
+
 void shutdown(xcpu *c){
   free(c->memory);
   free(c);

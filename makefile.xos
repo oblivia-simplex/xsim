@@ -1,0 +1,32 @@
+# Targets & general dependencies
+IMAGE=xos
+IMAGE_GOLD=xos_gold
+KERNEL=kernel.xo 
+PROCESS=hello.xo 
+PROCESSES=$(PROCESS) $(PROCESS) $(PROCESS) $(PROCESS)
+BIGTEST=$(PROCESSES) $(PROCESSES) $(PROCESSES) $(PROCESSES) \
+        $(PROCESSES) $(PROCESSES) $(PROCESSES) $(PROCESSES)
+
+# compilers, linkers, utilities, and flags
+XAS = ./xas
+
+# implicit rule to build .xo from .xas files
+.SUFFIXES: .xas .xo
+.xas.xo: $(HEADERS)
+	$(XAS) $< $@ 
+
+# explicit rules
+$(IMAGE): $(KERNEL) $(PROCESSES)
+	./xmkos xos $(KERNEL) $(PROCESSES)
+	./xmkos xos_bigtest $(KERNEL) $(BIGTEST)
+
+$(IMAGE_GOLD): 
+	make -f makefile.xos KERNEL=kernel_gold.xo
+	mv xos xos_gold
+	mv xos_bigtest xos_gold_bigtest
+
+gold: 
+	make -f makefile.xos xos_gold 
+
+clean:
+	rm -f $(IMAGE) $(IMAGE_GOLD) $(KERNEL) $(PROCESS) xos_*

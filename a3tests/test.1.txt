@@ -1,0 +1,19 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 1: Each CPU prints its own letter.
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+This test has each active CPU print out a letter between A and Z, depending
+on its ID. No more than 26 CPUs should be employed for this task, for obvious
+reasons.
+
+The expected output is an interleaved series of letters. Both my implementation
+and the gold implementation succeed in doing this.
+
+Compile with:
+
+../xas test.1.xas test.1.xo
+
+Run with:
+
+./xmpsim 10000 test.1.xo 0 26
+

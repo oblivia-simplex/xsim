@@ -1,0 +1,25 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 2: Print "HELLO". Each CPU with ID < 7 prints one letter. 
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+This test performs a simplified version of the kernel's wait_for_init
+routine, by having each CPU wait for its own turn to print a character,
+and spin in circles until its turn comes. CPUs with ID over 6 will not
+be given a turn at all.
+
+When it is the active CPU's turn, it prints letters[i], where i is the
+number returned by cpuid.
+
+The output is
+
+HELLO
+
+terminated by a new line.
+
+To Compile:
+
+../xas test.2.xas test.2.xo
+
+To Run:
+
+../xmpsimos 100000 test.2.xo 0 40

@@ -1,0 +1,15 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 1: Each CPU prints its own letter.
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+while:
+        loadi   letters,  r0
+        cpuid   r1
+        add     r1, r0
+        loadb   r0, r1
+        out     r1
+        jr      while
+
+
+letters:
+.literal "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

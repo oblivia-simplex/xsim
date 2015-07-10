@@ -1,0 +1,37 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Test 2: Print "HELLO". Each CPU with ID < 7 prints one letter. 
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
+        loadi     letters, r0
+        loadi     5, r1
+        add       r1, r0
+        loadi     0x0a, r1
+        storb     r1, r0
+while:
+        loadi     turn, r3      # Check to see if it's your turn. 
+        cpuid     r2
+        loada     r3, r4
+        equ       r2, r4
+        br        proceed
+        jr        while
+proceed:
+        loadi     6, r0         # CPUs with ID over 6 do nothing but wait.
+        cmp       r4, r0
+        br        okay
+        jr        while
+okay:
+        inc       r4            # Increment turn counter.
+        stora     r4, r3
+        loadi     letters,  r0
+        add       r2, r0
+        loadb     r0, r1
+        out       r1
+        jr        while
+
+
+letters:
+.literal "HELLOX"
+
+turn:
+.words 1

@@ -6,77 +6,8 @@
 #include <pthread.h>
 #include "xis.h"
 #include "xcpu.h"
+#include "xdb.h"
 
-
-//#define X_INSTRUCTIONS_NOT_NEEDED
-
-#define WORD_SIZE 2    // word size in bytes
-#define BYTE 8         // byte size in bits
-#define MEMSIZE 0x10000//0x10000
-#define LOG stderr
-
-
-/******************************************************************
-   Constructs a word out of two contiguous bytes in a byte array,
-   and returns it. Can be used to fetch instructions, labels, and
-   immediate values.
-******************************************************************/
-#define FETCH_WORD(ptr)                                                 \
-  (((unsigned short int) (c->memory[(ptr) % MEMSIZE] << 8)) & 0xFF00)   \
-  |(((unsigned short int) (c->memory[((ptr)+1) % MEMSIZE])) & 0x00FF)
-
-
-// a helper macro for the various push-style instructions
-#define PUSHER(word)                                                    \
-  c->regs[15] -= 2;                                                     \
-  c->memory[c->regs[15] % MEMSIZE] = (unsigned char) (word >> 8);       \
-  c->memory[(c->regs[15] + 1) % MEMSIZE] = (unsigned char) (word & 0xFF)
-
-// helper macro for pop-style instructions
-#define POPPER(dest)                            \
-  dest = FETCH_WORD(c->regs[15]);               \
-  c->regs[15] += 2;
-
-/* The lock for the cpu */
-static pthread_mutex_t cpulock = PTHREAD_MUTEX_INITIALIZER;    
-
-extern void xcpu_pretty_print(xcpu *c);
-void xcpu_print(xcpu *c);
-int xcpu_execute( xcpu *c, IHandler *table);
-int xcpu_exception( xcpu *c, unsigned int ex );
-unsigned short int fetch_word(unsigned char *mem, unsigned short int ptr);
-
-void * build_jump_table(void);
-void destroy_jump_table(void * addr);
-void fatal(char* errmsg);
-
-/**
- * The instruction functions are all constrained to have identical signatures,
- * since pointers to these functions need to be allocated in a jump table on
- * the heap. This lets us avoid a fair bit of code repetition, since we can
- * use a single macro to define their prototypes. The same macro can be used
- * for calling the functions. 
- **/
-#define INSTRUCTION(x) void x(xcpu *c, unsigned short int instruction)
-// instructions added in Assignment 1 (base set)
-INSTRUCTION(bad);      INSTRUCTION(ret);      INSTRUCTION(cld);
-INSTRUCTION(std);      INSTRUCTION(neg);      INSTRUCTION(not);
-INSTRUCTION(push);     INSTRUCTION(pop);      INSTRUCTION(jmpr);
-INSTRUCTION(callr);    INSTRUCTION(out);      INSTRUCTION(inc);
-INSTRUCTION(dec);      INSTRUCTION(br);       INSTRUCTION(jr);
-INSTRUCTION(add);      INSTRUCTION(sub);      INSTRUCTION(mul);
-INSTRUCTION(divide);   INSTRUCTION(and);      INSTRUCTION(or);
-INSTRUCTION(xor);      INSTRUCTION(shr);      INSTRUCTION(shl);
-INSTRUCTION(test);     INSTRUCTION(cmp);      INSTRUCTION(equ);
-INSTRUCTION(mov);      INSTRUCTION(load);     INSTRUCTION(stor);
-INSTRUCTION(loadb);    INSTRUCTION(storb);    INSTRUCTION(jmp);
-INSTRUCTION(call);     INSTRUCTION(loadi);
-// instructions added in Assignment 2 (interrupt handling)
-INSTRUCTION(cli);      INSTRUCTION(sti);      INSTRUCTION(iret);
-INSTRUCTION(trap);     INSTRUCTION(lit);
-// instructions added in Assignment 3 (threading)
-INSTRUCTION(cpuid);    INSTRUCTION(cpunum);   INSTRUCTION(loada);
-INSTRUCTION(stora);    INSTRUCTION(tnset);
 
 /**************************************************************************
    Gracefully terminate the programme on unrecoverable error.
@@ -86,7 +17,8 @@ void fatal(char *errmsg){
   exit(EXIT_FAILURE);  
   // some memory-freeing should happen here too...
 }
-/***************************************************************************
+
+/* **************************************************************************
    CREATE A JUMP TABLE TO THE INSTRUCTION FUNCTIONS
    =-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-=-=-=-=-=-=
    To be called only *once* per process. This should save time, as compared
@@ -199,16 +131,26 @@ void xcpu_print( xcpu *c ) {
  actual 'halting' is handled by xsim.c.
 *************************************************************/
 int xcpu_execute(xcpu *c, IHandler *table) {
-  unsigned char opcode[c->num];
-  unsigned short int instruction[c->num];
+
+  unsigned char opcode; //[c->num];
+  unsigned short int instruction; //[c->num];
   
-  instruction[c->id] = FETCH_WORD(c->pc);
-  opcode[c->id] = (unsigned char)( (instruction[c->id] >> 8) & 0x00FF); 
+  instruction = FETCH_WORD(c->pc);
+  opcode = (unsigned char)( (instruction >> 8) & 0x00FF); 
   c->pc += WORD_SIZE;  // extended instructions will increment pc a 2nd time
-  (table[opcode[c->id]])(c, instruction[c->id]);
+  (table[opcode])(c, instruction);
   if (c->state & 0x2) // check
     xcpu_print(c);
-  return (opcode[c->id] != I_BAD); //_halt;
+  //////////////////////
+  //if (c->memory[0x0268] == c->id){
+  //  printf("c->memory[0x0268] == %4.4x when c->id == %d @  c->pc == %4.4x !!\n", FETCH_WORD(0x0268), c->id,  c->pc);
+  //  exit(EXIT_FAILURE);
+  // }
+
+  ///////////////////
+
+
+  return (opcode != I_BAD); //_halt;
 }
 
 
@@ -241,7 +183,8 @@ int xcpu_exception( xcpu *c, unsigned int ex ) {
 
 INSTRUCTION(bad){
   if ((unsigned char)( (instruction >> 8) & 0x00FF) != 0x00){ 
-    printf("\n***** BAD INSTRUCTION ON CPU %d: 0x%4.4x at PC 0x%4.4x *****\n", c->id, instruction, (c->pc)-WORD_SIZE);
+    printf("\n***** BAD INSTRUCTION ON CPU %d: 0x%4.4x at PC 0x%4.4x *****\n",
+           c->id, instruction, (c->pc)-WORD_SIZE);
   }
 }
 INSTRUCTION(ret){

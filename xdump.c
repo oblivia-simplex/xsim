@@ -1,32 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <pthread.h>
 #include "xis.h"
 #include "xcpu.h"
-#define XCPU
 
-#define LOG stdout
-#define WORD_SIZE 2    // word size in bytes
-#define BYTE 8         // byte size in bits
-#define MEMSIZE 0x10000
-
-// a handy macro for fetching word-sized chunks of data from memory
-#define FETCH_WORD(ptr) \
-     (((unsigned short int) (c->memory[(ptr) % 0x1000] << 8)) & 0xFF00)\
-     |(((unsigned short int) (c->memory[((ptr)+1) % 0x1000])) & 0x00FF)
-// to replace deprecated fetch_word function, and save a bit of runtime.
-
-// a helper macro for the various push-style instructions
-#define PUSHER(word)\
-  c->regs[15] -= 2;\
-  c->memory[c->regs[15] % 0x10000] = (unsigned char) (word >> 8); \
-  c->memory[(c->regs[15] + 1) % 0x10000] = (unsigned char) (word & 0xFF)
-
-
-
-// to prevent xdb from reloading the xcpu module
-#include "xdb.c"
+#include "xdb.h"
 
 
 /**
