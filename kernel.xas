@@ -17,6 +17,7 @@
   lit r0               # set it into interrupt table register
 
   cpuid r1             # check if you are the primary cpu (0) or not.
+
   test r1, r1
   br wait_for_init     # if not primary wait for kernel initialization
                        
@@ -319,8 +320,14 @@ setup_procs:
   add   r3, r2          # add to start of PCB table
   loadi proc_stacks, r3 # store result in start of stacks variable
   stor  r2, r3          #
-  mov   r2, r6          # r6 no holds pointer to first process stack
-
+  mov   r2, r6          # r6 now holds pointer to first process stack
+                        # SOMETHING HERE IS CAUSING A BUG WHEN RUNNING ON
+                        # CPU 0. c->memory[0x0268] IS BEING OVERWRITTEN
+                        # WITH A ZERO. THIS COULD ALSO EXPLAIN WHY STD
+                        # IS PERFORMED WITHOUT EXPLANATION. IT'S PROBABLY
+                        # WHEN CPUNUM = 3 IS BEING WRITTEN TO THE SAME
+                        # ADDR. THE ERROR HAPPENS AT C->PC == 01E8
+                        # STOR R3, R6, EVEN WHEN ONLY 1 THREAD IS RUNNING
   # allocate stacks for each process
   loadi 1024, r3        # each stack will be 1024 bytes
   mov   r3, r7          # r7 now holds size of each stack
@@ -352,6 +359,9 @@ sp_loop:
 
   load  r2, r3          # load offset of process
   stor  r3, r6          # store start of process into its stack
+                        # >>>>>>> THIS IS WHERE THE ERROR OCCURS <<<<<<<
+                        # >> IT HAPPENS WHEN STOR WRITES TO 0267, WHICH
+                        # IS SQUARELY WITHIN THE CODE SEGMENT. 
   inc   r2              # point to next process offset in proc_locs table
   inc   r2              #
 
@@ -668,6 +678,10 @@ tmp_stack:
 int_tab:
   .words 4
 
+
+mutex:              # might not use this approach after all. 
+  .words 1
+
 free_space:
   .words 1
 
@@ -687,13 +701,9 @@ pcb_tab:
   .words 1
 
 init_flag:
-  .literal 0 # tnset affects an entire word, not just a byte. 
+  .words 1 # tnset affects an entire word, not just a byte. 
 
 cpu_tab:
   .words 1
 
 proc_locs:
-  .words 512
-
-mutex:              # might not use this approach after all. 
-  .words 1
